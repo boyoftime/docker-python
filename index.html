@@ -100,6 +100,7 @@
         .toc li { margin-bottom: 0.5rem; }
         .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
         .info-box p:last-child { margin-bottom: 0; }
+        .info-box ul { margin-bottom: 0; }
 
         /* --- THEME TOGGLE SWITCH --- */
         .theme-switch-wrapper { display: flex; align-items: center; }
@@ -176,14 +177,19 @@
                         <li><strong>The Spokes (Your Apps):</strong> Each Flask application will be a self-contained project in its own folder, with its own `docker-compose.yml`. Each app project will connect to the shared network, allowing the Hub to forward traffic to it.</li>
                     </ul>
                     <div class="info-box">
-                        <p><strong>Why is this better?</strong> Isolation and Scalability. You can update, restart, or even break one app without affecting any of the others. Adding a new app is as simple as adding a new folder.</p>
+                        <p><strong>Why is this better?</strong></p>
+                        <ul>
+                            <li><strong>Isolation:</strong> You can update, restart, or even break one app without affecting any of the others.</li>
+                            <li><strong>Clarity:</strong> An app's entire configuration lives with its code.</li>
+                            <li><strong>Scalability:</strong> The process for managing 2 apps is the same as for 20.</li>
+                        </ul>
                     </div>
                 </section>
                 
                 <section id="section-3">
                     <h2>Part 1: Initial Server Setup</h2>
-                    <h3>Step 1: Connect and Install Docker</h3>
-                    <p>Log into your VPS and install Docker and Docker Compose.</p>
+                    <h3>Step 1: Connect, Install Docker & Configure Firewall</h3>
+                    <p>Log into your VPS and install Docker. This is the only software we need on the host machine.</p>
                     <pre><code class="language-bash"># Connect to your server
 ssh root@YOUR_SERVER_IP
 
@@ -191,36 +197,36 @@ ssh root@YOUR_SERVER_IP
 apt-get update
 apt-get install -y docker.io docker-compose-v2
 </code></pre>
+                    <div class="info-box">
+                        <p><strong>Important Firewall Configuration:</strong> Before proceeding, log in to your VPS provider's dashboard and configure its firewall. You must **ALLOW inbound TCP traffic** on these ports:
+                            <ul>
+                                <li><strong>Port 22:</strong> For SSH (so you don't lock yourself out!)</li>
+                                <li><strong>Port 80:</strong> For HTTP and SSL certificate validation.</li>
+                                <li><strong>Port 443:</strong> For secure HTTPS traffic.</li>
+                                <li><strong>Port 81:</strong> For the Nginx Proxy Manager admin panel.</li>
+                            </ul>
+                        </p>
+                    </div>
                     
-                    <h3>Step 2: Create the Shared Network</h3>
-                    <p>This is a crucial, one-time command. We'll name our network `nginx-proxy`.</p>
-                    <pre><code class="language-bash">docker network create nginx-proxy
+                    <h3>Step 2: Create the Shared Docker Network</h3>
+                    <p>This crucial one-time command creates the private network our containers will use to communicate.</p>
+                    <pre><code class="language-bash"># This network will persist even if containers are stopped or removed.
+docker network create nginx-proxy
 </code></pre>
 
-                    <h3>Step 3: Create the Project Structure</h3>
-                    <p>On your server, create the following directory structure. This is where all our projects will live.</p>
-                    <pre><code class="language-bash"># Create the main directory
+                    <h3>Step 3: Create the Project Directory Structure</h3>
+                    <p>On your server, create the following directories. This organization keeps everything tidy.</p>
+                    <pre><code class="language-bash"># Create the main directory for all our projects
 mkdir -p /root/docker-deployment/apps
 
-# Create the directory for the proxy manager
+# Create the directory for our central proxy manager
 mkdir /root/docker-deployment/proxy-manager
-</code></pre>
-                    <p>Your final structure will look like this (you'll create the app folders later):</p>
-                    <pre><code class="language-text">/root/docker-deployment/
-├── proxy-manager/
-│   └── docker-compose.yml
-└── apps/
-    ├── flask_app_1/
-    │   └── ... (all app files)
-    └── flask_app_2/
-        └── ... (all app files)
 </code></pre>
                 </section>
 
                 <section id="section-4">
                     <h2>Part 2: Configuring the Central Proxy Manager</h2>
-                    <p>This is our "Hub". It will handle SSL and route traffic to our apps.</p>
-                    <p>Create the file <code>/root/docker-deployment/proxy-manager/docker-compose.yml</code> and add the following content:</p>
+                    <p>This is our "Hub". It will handle SSL and route traffic to our apps. Create the file <code>/root/docker-deployment/proxy-manager/docker-compose.yml</code> on your server and add the following content:</p>
                     <pre><code class="language-yaml"># /root/docker-deployment/proxy-manager/docker-compose.yml
 services:
   proxy:
@@ -228,19 +234,20 @@ services:
     container_name: nginx-proxy-manager
     restart: unless-stopped
     ports:
+      # These ports map from the HOST to the CONTAINER (HOST:CONTAINER)
       - '80:80'    # Public HTTP
       - '443:443'  # Public HTTPS
       - '81:81'    # Admin Panel
     volumes:
-      # Use relative paths for data persistence within this project folder
+      # Persist data and SSL certificates on the host machine
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
     networks:
-      # Connect this service to our pre-existing shared network
+      # Connect this service to our shared network
       - nginx-proxy
 
-# Tell Docker that 'nginx-proxy' is a pre-existing, external network
-# and not one to be created by this file.
+# This section tells Docker that 'nginx-proxy' is a pre-existing network
+# and should not be created by this file.
 networks:
   nginx-proxy:
     external: true
@@ -249,7 +256,7 @@ networks:
 
                 <section id="section-5">
                     <h2>Part 3: Building Your First Flask App</h2>
-                    <p>Now we build our first "Spoke". All of the following files should be created on your local machine first, inside a folder named `flask_app_1`, and then uploaded to the server.</p>
+                    <p>Now we build our first "Spoke". All of the following files should be created on your local machine first, inside a folder named `flask_app_1`. You will then upload this entire folder to the server.</p>
 
                     <h3>Project Structure for <code>flask_app_1</code></h3>
                     <pre><code class="language-text">flask_app_1/
@@ -262,7 +269,7 @@ networks:
 └── docker-compose.yml
 </code></pre>
 
-                    <h4>File 1: <code>app.py</code> (with templates)</h4>
+                    <h4>File 1: <code>app.py</code> (The Flask App)</h4>
                     <pre><code class="language-python"># flask_app_1/app.py
 from flask import Flask, render_template
 
@@ -301,27 +308,46 @@ h1 { color: #0056b3; }
 gunicorn
 </code></pre>
                     
-                    <h4>File 5: <code>Dockerfile</code></h4>
-                    <pre><code class="language-dockerfile">FROM python:3.12-slim
+                    <h4>File 5: <code>Dockerfile</code> (The Production-Ready Blueprint)</h4>
+                    <p>This is the best-practice Dockerfile using the modern `uv` installer for speed and reliability.</p>
+                    <pre><code class="language-dockerfile"># Start with a modern, lightweight, official Python image.
+FROM python:3.12-slim
+
+# Set the working directory inside the container.
 WORKDIR /app
+
+# Update package lists and install curl, needed to fetch 'uv'.
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Docker Caching Optimization: Copy ONLY the requirements file first.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install 'uv', the modern Python package installer, and use it to install dependencies.
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    /root/.local/bin/uv pip install --no-cache-dir --system -r requirements.txt
+
+# Now, copy the rest of your application code into the container.
 COPY . .
+
+# The command to run when the container starts, launching the Gunicorn production server.
 CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "app:app"]
 </code></pre>
 
                     <h4>File 6: <code>nginx.conf</code> (Internal Proxy & Static Server)</h4>
-                    <p>This Nginx configuration is crucial. It serves static files directly for performance and forwards dynamic requests to Flask.</p>
+                    <p>This Nginx configuration serves static files directly for performance and forwards dynamic requests to Flask.</p>
                     <pre><code class="language-nginx">server {
     listen 80;
 
-    # Rule 1: Serve static files directly from the container's filesystem
+    # Rule 1: Serve static files directly. Nginx is much faster at this than Flask.
     location /static {
+        # The WORKDIR in our Dockerfile is /app, so our static files are at /app/static.
         alias /app/static;
     }
 
-    # Rule 2: Pass all other requests to the Flask application
+    # Rule 2: Pass all other requests to the Flask application.
     location / {
+        # 'app_one' is the service name of our Flask app in this project's docker-compose.yml.
+        # Docker's internal DNS will resolve this name to the correct container.
         proxy_pass http://app_one:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -331,29 +357,29 @@ CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "app:app"]
 }
 </code></pre>
 
-                    <h4>File 7: <code>docker-compose.yml</code> (App-Specific)</h4>
-                    <p>This is the control file for this app only.</p>
+                    <h4>File 7: <code>docker-compose.yml</code> (App-Specific Control File)</h4>
+                    <p>This file defines and orchestrates the services for *this app only*.</p>
                     <pre><code class="language-yaml"># flask_app_1/docker-compose.yml
 services:
+  # This is the Flask/Gunicorn application service.
   app_one:
-    # A unique name for this app's main service
     container_name: flask_app_one_app
-    build: .
+    build: . # Build the image using the Dockerfile in the current directory.
     restart: always
     expose:
-      - "8000"
+      - "8000" # Expose port 8000 ONLY to other containers on the same network.
     networks:
       - nginx-proxy
 
+  # This is the internal Nginx service for this app.
   nginx_app_one:
-    # A unique name for this app's web server
     container_name: flask_app_one_nginx
     image: nginx:latest
     restart: always
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - app_one
+      - app_one # Tells Docker to start the 'app_one' service before this one.
     networks:
       - nginx-proxy
 
@@ -366,31 +392,31 @@ networks:
                 <section id="section-6">
                     <h2>Part 4: The Deployment Workflow</h2>
                     <h3>Step 1: Upload Your App Project</h3>
-                    <p>Using FileZilla, upload your entire local `flask_app_1` folder to the `/root/docker-deployment/apps/` directory on your server.</p>
+                    <p>Using an SFTP client like FileZilla, upload your entire local `flask_app_1` folder to the `/root/docker-deployment/apps/` directory on your server.</p>
 
-                    <h3>Step 2: Launch the Proxy Manager (Hub)</h3>
+                    <h3>Step 2: Launch the Proxy Manager (The Hub)</h3>
                     <p>This only needs to be done once. Navigate to its directory and start it.</p>
                     <pre><code class="language-bash">cd /root/docker-deployment/proxy-manager
 docker compose up -d
 </code></pre>
 
-                    <h3>Step 3: Launch Your Flask App (Spoke)</h3>
-                    <p>Now, navigate to your app's directory and start its services.</p>
+                    <h3>Step 3: Launch Your Flask App (The Spoke)</h3>
+                    <p>Now, navigate to your app's directory and start its services. The `--build` flag tells Docker to build the image from your Dockerfile the first time.</p>
                     <pre><code class="language-bash">cd /root/docker-deployment/apps/flask_app_1
 docker compose up --build -d
 </code></pre>
 
-                    <h3>Step 4: Configure Domain and SSL</h3>
-                    <p>The final step is to tell the Proxy Manager how to route traffic to your new app.</p>
+                    <h3>Step 4: Configure Domain and SSL in the UI</h3>
+                    <p>This is the final step to make your site live. We tell the Proxy Manager how to find and secure your app.</p>
                     <ol>
                         <li>Open your browser to <code>http://YOUR_SERVER_IP:81</code>.</li>
-                        <li>Log in (<code>admin@example.com</code> / <code>changeme</code>) and change your credentials.</li>
+                        <li>Log in (<code>admin@example.com</code> / <code>changeme</code>) and immediately change your credentials.</li>
                         <li>Go to <strong>Hosts &rarr; Proxy Hosts</strong> and click "Add Proxy Host".</li>
                         <li><strong>Details Tab:</strong>
                             <ul>
                                 <li><strong>Domain Names:</strong> <code>app1.yourdomain.com</code></li>
                                 <li><strong>Scheme:</strong> <code>http</code></li>
-                                <li><strong>Forward Hostname / IP:</strong> <code>nginx_app_one</code> (This MUST match the service name in your app's `docker-compose.yml`).</li>
+                                <li><strong>Forward Hostname / IP:</strong> <code>nginx_app_one</code> (This MUST match the service name of the internal Nginx in your app's `docker-compose.yml`).</li>
                                 <li><strong>Forward Port:</strong> <code>80</code></li>
                             </ul>
                         </li>
@@ -402,7 +428,7 @@ docker compose up --build -d
                             </ul>
                         </li>
                     </ol>
-                    <p>✨ After a minute, your site will be live and secure at <code>https://app1.yourdomain.com</code>!</p>
+                    <p>✨ After about a minute, your site will be live and secure at <code>https://app1.yourdomain.com</code>!</p>
                 </section>
 
                 <section id="section-7">
@@ -410,22 +436,28 @@ docker compose up --build -d
                     <p>Here's where our modular architecture shines. Adding another app is incredibly simple.</p>
                     <ol>
                         <li>On your local machine, copy the `flask_app_1` folder and rename it to `flask_app_2`.</li>
-                        <li>Modify the code in `flask_app_2` as needed (e.g., change the text in `index.html`).</li>
+                        <li>Modify the code in `flask_app_2` (e.g., change the text in `index.html`).</li>
                         <li><strong>Crucially, edit <code>flask_app_2/docker-compose.yml</code>.</strong> Give the services unique names to avoid conflicts.
                         <pre><code class="language-yaml"># flask_app_2/docker-compose.yml
 services:
   app_two: # Renamed from app_one
     container_name: flask_app_two_app # Unique container name
-    # ... rest is the same
+    build: .
+    restart: always
+    expose: [ "8000" ]
+    networks: [ "nginx-proxy" ]
   nginx_app_two: # Renamed from nginx_app_one
     container_name: flask_app_two_nginx # Unique container name
-    # ... rest is the same
-    depends_on:
-      - app_two # Point to the new service name
-# ... network config is the same
+    image: nginx:latest
+    restart: always
+    volumes: [ "./nginx.conf:/etc/nginx/conf.d/default.conf" ]
+    depends_on: [ "app_two" ] # Point to the new service name
+    networks: [ "nginx-proxy" ]
+networks:
+  nginx-proxy: { external: true }
 </code></pre>
-                        <p>Also, remember to update `flask_app_2/nginx.conf` to point to the new service name `app_two`:</p>
-                        <pre><code class="language-nginx"># in flask_app_2/nginx.conf
+                        <p>Also, update `flask_app_2/nginx.conf` to point to the new service name `app_two`:</p>
+                        <pre><code class="language-nginx"># in flask_app_2/nginx.conf, change this one line:
 proxy_pass http://app_two:8000;
 </code></pre>
                         </li>
@@ -456,23 +488,24 @@ docker compose ps
 # Stop and remove containers for the current project
 docker compose down
 
-# View real-time logs for a specific service
+# View real-time logs for a specific service (e.g., the Flask app)
 docker compose logs -f app_one
 </code></pre>
                 </section>
 
                 <section id="section-9">
                     <h2>Part 7: Decommissioning the Project</h2>
-                    <p>To cleanly remove everything, follow these steps in order.</p>
+                    <p>To cleanly remove everything from your server, follow these steps in order.</p>
                      <ol>
-                        <li><strong>Take Down Each App:</strong> Navigate into each app directory and run `down -v` to remove containers and their associated volumes.
+                        <li><strong>Take Down Each App:</strong> Navigate into each app directory and run `down -v`. The `-v` flag is important as it removes anonymous volumes created by the containers.
                              <pre><code class="language-bash">cd /root/docker-deployment/apps/flask_app_1
 docker compose down -v
 cd /root/docker-deployment/apps/flask_app_2
 docker compose down -v
+# Repeat for any other apps...
 </code></pre>
                         </li>
-                         <li><strong>Take Down the Proxy Manager:</strong>
+                         <li><strong>Take Down the Proxy Manager:</strong> This removes the proxy container and its named volumes (`data`, `letsencrypt`).
                              <pre><code class="language-bash">cd /root/docker-deployment/proxy-manager
 docker compose down -v
 </code></pre>
@@ -482,7 +515,7 @@ docker compose down -v
 </code></pre>
                          </li>
                          <li><strong>Delete the Project Folder:</strong>
-                             <pre><code class="language-bash"># Be careful! This deletes everything inside.
+                             <pre><code class="language-bash"># Be very careful! This deletes everything inside the project folder.
 rm -rf /root/docker-deployment
 </code></pre>
                          </li>
