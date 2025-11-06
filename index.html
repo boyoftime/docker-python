@@ -120,6 +120,32 @@
             h1 { font-size: 2rem; }
             h2 { font-size: 1.7rem; }
         }
+
+        /* Add this to your existing CSS, maybe near the bottom */
+        .guide-button {
+            display: block;
+            background-color: #28a745;
+            color: white !important; /* Use !important to override default link color */
+            text-align: center;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 3rem 0;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .guide-button:hover {
+            background-color: #218838;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+        [data-theme="dark"] .guide-button {
+            background-color: #3b9c52;
+        }
+        [data-theme="dark"] .guide-button:hover {
+            background-color: #328345;
+        }
     </style>
 </head>
 <body>
@@ -430,6 +456,10 @@ docker compose up --build -d
                     </ol>
                     <p>✨ After about a minute, your site will be live and secure at <code>https://app1.yourdomain.com</code>!</p>
                 </section>
+                
+                <a href="database-guide.html" class="guide-button">
+                    Next Step: See the Guide to Set Up a Central MySQL Database & phpMyAdmin
+                </a>
 
                 <section id="section-7">
                     <h2>Part 5: Scaling with a Second App</h2>
