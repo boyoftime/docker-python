@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Advanced Docker Management & Cleanup</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box--shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Docker Management Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Advanced Docker Management & Cleanup</h1>
+                    <p>Understanding Images, Pruning, and Keeping Your Server Tidy</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">The Docker Lifecycle: Why Things Get Left Behind</a></li>
+                        <li><a href="#section-2">What Are <code>&lt;none&gt;</code> (Dangling) Images?</a></li>
+                        <li><a href="#section-3">Part 1: The Safe & Easy Cleanup (Pruning)</a></li>
+                        <li><a href="#section-4">Part 2: Removing Specific, Unused Images</a></li>
+                        <li><a href="#section-5">Part 3: Other Useful Docker Commands</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>The Docker Lifecycle: Why Things Get Left Behind</h2>
+                    <p>When you followed the decommissioning steps for a project, you correctly removed the running application and its configuration. However, you noticed that the Docker "installer" file—the **Image**—was still on your server. This is by design and is key to understanding Docker's efficiency.</p>
+                    <p>Think of it like this:</p>
+                    <ul>
+                        <li><strong>The Image:</strong> This is the master blueprint or "installer file" (e.g., `setup.exe`). Docker downloads this once and keeps it.</li>
+                        <li><strong>The Container:</strong> This is the actual running program, created *from* the Image. The `docker compose down` command uninstalls this program.</li>
+                        <li><strong>The Project Folder:</strong> This holds your custom settings (`docker-compose.yml`, `config/`). The `rm -rf` command deletes these personal files.</li>
+                    </ul>
+                    <p>Docker keeps the Image so that if you want to launch the service again, it doesn't have to re-download it from the internet. This is fast and efficient, but over time it can lead to unused Images taking up disk space.</p>
+                </section>
+                
+                <section id="section-2">
+                    <h2>What Are <code>&lt;none&gt;</code> (Dangling) Images?</h2>
+                    <p>When you list your images with <code>docker images</code>, you often see entries where the repository and tag are both <code>&lt;none&gt;</code>. These are called "dangling images."</p>
+                    <p>These are most commonly created when you rebuild an image for an application you are developing, like your Flask app. For example:</p>
+                    <ol>
+                        <li>You build your Flask app. The resulting image is tagged <code>flask_app_1:latest</code>.</li>
+                        <li>You change your Python code and run <code>docker compose up --build -d</code> again.</li>
+                        <li>Docker builds a brand **new** image and gives it the tag <code>flask_app_1:latest</code>.</li>
+                        <li>The **old** image, which is no longer the "latest", loses its tag. It is now a dangling image, shown as <code>&lt;none&gt;</code>.</li>
+                    </ol>
+                    <p>These images are generally safe to remove as they are no longer associated with any tagged image and are not being used by any containers.</p>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 1: The Safe & Easy Cleanup (Pruning)</h2>
+                    <p>Docker provides a simple, safe command to clean up most unused resources, including all dangling <code>&lt;none&gt;</code> images.</p>
+                    
+                    <h3>Cleaning Up Dangling Images</h3>
+                    <p>This is the most common and safest cleanup command you will use.</p>
+                    <pre><code class="language-bash"># This command specifically targets and removes all dangling images.
+docker image prune
+</code></pre>
+                    <p>Docker will ask for confirmation, as this action is irreversible. After you confirm with `y`, it will list all the deleted images and tell you how much disk space was reclaimed.</p>
+
+                    <h3>The "Nuke" Option (Use with Caution)</h3>
+                    <div class="info-box" style="border-color: #dc3545;">
+                        <p><strong>⚠️ Warning:</strong> The following command is very powerful. It will remove all dangling images, **AND** all unused images (images not used by any container), **AND** all stopped containers, **AND** all unused networks.</p>
+                        <p>Only use this if you want a major cleanup. It might remove an image you wanted to keep for a stopped project.</p>
+                    </div>
+                    <pre><code class="language-bash"># This command cleans up the entire Docker system. The -a flag means "all".
+docker system prune -a
+</code></pre>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Part 2: Removing Specific, Unused Images</h2>
+                    <p>Sometimes you want to remove a specific image that is no longer in use but isn't dangling (for example, the old `filebrowser:latest` image). </p>
+
+                    <h3>Step 1: List All Images</h3>
+                    <p>First, get a list of all images on your server to find the one you want to delete.</p>
+                    <pre><code class="language-bash">docker images
+</code></pre>
+                    <p>You will see a list with columns for `REPOSITORY`, `TAG`, and `IMAGE ID`.</p>
+
+                    <h3>Step 2A: Removing by Name and Tag</h3>
+                    <p>This is the most common method. You use the full name from the list.</p>
+                    <pre><code class="language-bash"># Example: Removing the old, non-s6 filebrowser image
+docker rmi filebrowser/filebrowser:latest
+
+# Example: Removing the old Homer dashboard image
+docker rmi b4bz/homer:latest
+</code></pre>
+
+                    <h3>Step 2B: Removing by Image ID</h3>
+                    <p>This is useful for deleting a specific <code>&lt;none&gt;</code> image without pruning all of them, or if an image name is long and complex.</p>
+                    <pre><code class="language-bash"># Example: From your list, one of the dangling images has ID 5eae50f5830e
+# You only need the first few unique characters.
+docker rmi 5eae
+</code></pre>
+                    <div class="info-box">
+                        <p><strong>What if an image is in use?</strong> If you try to remove an image that is currently being used by a container (even a stopped one), Docker will protect you and show an error message. You must stop and remove the container (`docker compose down`) before you can remove its image.</p>
+                    </div>
+                </section>
+                
+                <section id="section-5">
+                    <h2>Part 3: Other Useful Docker Commands</h2>
+                    <p>These commands operate at the top level of Docker, outside of any specific `docker-compose` project, and are useful for getting a high-level overview of your system.</p>
+                    <pre><code class="language-bash"># List all running containers across all projects
+docker ps
+
+# List ALL containers, including stopped ones
+docker ps -a
+
+# Show a live stream of resource usage (CPU, RAM) for all running containers
+docker stats
+
+# List all Docker volumes (where persistent data is stored)
+docker volume ls
+
+# List all Docker networks (like our shared 'nginx-proxy' network)
+docker network ls
+</code></pre>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>

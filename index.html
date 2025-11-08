@@ -436,6 +436,12 @@ docker compose up --build -d
                     <p>This is the final step to make your site live. We tell the Proxy Manager how to find and secure your app.</p>
                     <ol>
                         <li>Open your browser to <code>http://YOUR_SERVER_IP:81</code>.</li>
+                        <div class="info-box" style="margin-top: 1rem;">
+                            <p><strong>Security Pro Tip:</strong> Before proceeding, consider giving the admin panel itself a secure domain name. This is highly recommended for long-term use instead of accessing it via an IP address.</p>
+                            <a href="secure-npm-guide.html" class="guide-button" style="background-color: #ffc107; color: #212529 !important; margin-top: 1rem; margin-bottom: 0; font-size: 1rem; padding: 0.75rem 1rem;">
+                                Learn How to Secure the Admin Panel with a Domain/SSL
+                            </a>
+                        </div>
                         <li>Log in (<code>admin@example.com</code> / <code>changeme</code>) and immediately change your credentials.</li>
                         <li>Go to <strong>Hosts &rarr; Proxy Hosts</strong> and click "Add Proxy Host".</li>
                         <li><strong>Details Tab:</strong>
@@ -521,7 +527,53 @@ docker compose down
 # View real-time logs for a specific service (e.g., the Flask app)
 docker compose logs -f app_one
 </code></pre>
+
+                    <h3>Optional: Visual Management with Portainer</h3>
+                    <p>
+                        While the command line is powerful, many developers prefer a graphical user interface (GUI) for day-to-day monitoring. <strong>Portainer</strong> is a popular web-based dashboard that allows you to see the status of your containers, view logs, and perform quick actions like restarting or stopping, all from your browser.
+                    </p>
+                    <div class="info-box">
+                        <p><strong>The Hybrid Workflow:</strong> A highly effective professional workflow is to use the <strong>command line for deployments and updates</strong> (running <code>docker compose up --build -d</code>) and use <strong>Portainer for monitoring and quick management</strong> of the running containers. The guide below explains how to set this up.</p>
+                    </div>
+
+                    <a href="portainer-guide.html" class="guide-button" style="background-color: #007bff; margin-top: 2rem;">
+                        See the Guide to Set Up Portainer for Visual Management
+                    </a>
+
+                    <!-- ADD THIS NEW BUTTON -->
+                    <a href="docker-management-guide.html" class="guide-button" style="background-color: #6c757d; margin-top: 1rem;">
+                        Advanced Docker Management: Images, Pruning, and Cleanup
+                    </a>
+                    
                 </section>
+
+
+
+                <section id="section-more-services">
+                    <h2>More Self-Hosted Services</h2>
+                    <p>
+                        The modular architecture you've built makes it easy to add more useful, self-contained services. The guides below will help you expand your server's capabilities.
+                    </p>
+
+                    <a href="wg-easy-guide.html" class="guide-button" style="background-color: #6f42c1;">
+                        Optional: Set Up a WG-Easy VPN Server
+                    </a>
+
+                    <!-- ADD THIS NEW BUTTON -->
+                    <a href="heimdall-guide.html" class="guide-button" style="background-color: #17a2b8; margin-top: 1rem;">
+                        Optional: Set Up a Heimdall Application Dashboard
+                    </a>
+                    <!-- END OF NEW BUTTON -->
+
+                    <a href="filebrowser-guide.html" class="guide-button" style="background-color: #fd7e14; margin-top: 1rem;">
+                        Optional: Set Up a Web-Based File Manager
+                    </a>
+
+
+                </section>
+
+
+
 
                 <section id="section-9">
                     <h2>Part 7: Decommissioning the Project</h2>

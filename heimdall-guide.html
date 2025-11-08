@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up a Heimdall Application Dashboard</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Heimdall Dashboard Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up a Heimdall Application Dashboard</h1>
+                    <p>A Beautiful, Visual Homepage for All Your Self-Hosted Services</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">What is Heimdall?</a></li>
+                        <li><a href="#section-2">Part 1: Installing Heimdall with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Configuring Your Dashboard</a></li>
+                        <li><a href="#section-4">Part 3: Securing Heimdall with a Domain and SSL</a></li>
+                        <li><a href="#section-5">Part 4: Decommissioning Heimdall</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>What is Heimdall?</h2>
+                    <p>As you add more services to your server (Nginx Proxy Manager, Portainer, your own apps), it becomes hard to remember all the different URLs and ports. Heimdall solves this problem by providing a single, visually appealing "home page" for your server.</p>
+                    <p>It's a dashboard of clickable icons that take you directly to your services. It's the perfect way to organize and access everything you host.</p>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Part 1: Installing Heimdall with Docker</h2>
+                    <p>We will follow the same modular pattern as our other services, giving Heimdall its own isolated project folder.</p>
+
+                    <h3>Step 1: Create the Project Directory</h3>
+                    <pre><code class="language-bash"># Create a dedicated directory for the Heimdall service
+mkdir /root/docker-deployment/heimdall
+</code></pre>
+
+                    <h3>Step 2: Create the `docker-compose.yml` File</h3>
+                    <pre><code class="language-bash">nano /root/docker-deployment/heimdall/docker-compose.yml
+</code></pre>
+                    <p>Paste the following configuration into the file. The setup is simple and reliable.</p>
+                    <pre><code class="language-yaml">services:
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: heimdall
+    environment:
+      # These are for setting user permissions inside the container.
+      # The defaults are fine for most systems.
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC # You can change this to your timezone, e.g., "America/New_York"
+    volumes:
+      # CRITICAL: This line persists your dashboard configuration on the host.
+      - ./config:/config
+    ports:
+      # This maps port 8088 on your server to port 80 inside the container.
+      # We use 8088 to avoid conflicts with other web services.
+      - '8088:80'
+    restart: unless-stopped
+</code></pre>
+
+                    <h3>Step 3: Launch Heimdall</h3>
+                    <pre><code class="language-bash"># Navigate to the heimdall directory
+cd /root/docker-deployment/heimdall
+
+# Download the image and start the service
+docker compose up -d
+</code></pre>
+                    <p>Your new dashboard is now running! You can access it by opening a browser and navigating to <code>http://YOUR_SERVER_IP:8088</code>.</p>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: Configuring Your Dashboard</h2>
+                    <p>When you first visit your Heimdall page, it will be empty. Adding links to your services is easy.</p>
+                    <ol>
+                        <li>In the bottom-right corner, click the "Application List" icon (it looks like a grid of squares).</li>
+                        <li>Click the **"+ Add"** button to open the application form.</li>
+                        <li>
+                            <strong>Example: Adding Nginx Proxy Manager</strong>
+                            <ul>
+                                <li><strong>Application Name:</strong> `Nginx Proxy Manager`</li>
+                                <li><strong>Application Type:</strong> Start typing `Nginx Proxy Manager` and select it from the list to get a nice icon.</li>
+                                <li><strong>URL:</strong> Enter the IP address and port: <code>http://YOUR_SERVER_IP:81</code></li>
+                                <li>Click **Save**.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Example: Adding your Flask App</strong>
+                            <ul>
+                                <li><strong>Application Name:</strong> `My First Flask App`</li>
+                                <li><strong>Application Type:</strong> Start typing `Flask` and select it.</li>
+                                <li><strong>URL:</strong> Enter the full public domain you configured in NPM: <code>https://app1.yourdomain.com</code></li>
+                                <li>Click **Save**.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p>Repeat this process for all your services (Portainer, phpMyAdmin, etc.) to build out your complete dashboard.</p>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Part 3: Securing Heimdall with a Domain and SSL</h2>
+                    <p>Just like our other management panels, it's best to access Heimdall via a secure, easy-to-remember domain name. We'll use Nginx Proxy Manager to do this.</p>
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create an 'A' record for a subdomain like <code>home.yourdomain.com</code> and point it to your server's IP address.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
+                        <li><strong>Add a New Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Details Tab:</strong>
+                                    <ul>
+                                        <li><strong>Domain Names:</strong> <code>home.yourdomain.com</code></li>
+                                        <li><strong>Scheme:</strong> <code>http</code></li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>heimdall</code> (Docker's internal DNS will resolve this service name to the right container).</li>
+                                        <li><strong>Forward Port:</strong> <code>80</code> (This is the internal port of the Heimdall container, not the public 8088 port).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
+                                <li><strong>Save.</strong></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p>After a minute, you will be able to access your beautiful and secure dashboard at <code>https://home.yourdomain.com</code>.</p>
+                </section>
+                
+                <section id="section-5">
+                    <h2>Part 4: Decommissioning Heimdall</h2>
+                    <p>If you no longer need the dashboard, follow these steps to remove it cleanly.</p>
+                     <ol>
+                        <li>
+                            <strong>Remove the Proxy Host:</strong> First, log into Nginx Proxy Manager and delete the proxy host you created for Heimdall (e.g., `home.yourdomain.com`).
+                        </li>
+                        <li>
+                            <strong>Take Down the Docker Service:</strong> Navigate to the Heimdall project directory and run the `down` command. The `-v` flag is important as it also removes the volume containing your dashboard configuration.
+                            <pre><code class="language-bash">cd /root/docker-deployment/heimdall
+docker compose down -v
+</code></pre>
+                        </li>
+                         <li>
+                            <strong>Delete the Project Folder:</strong> Finally, remove the project directory itself.
+                             <pre><code class="language-bash"># Go up one directory level
+cd ..
+
+# Be careful! This command permanently deletes the folder.
+rm -rf heimdall
+</code></pre>
+                         </li>
+                    </ol>
+                     <p>Heimdall has now been completely removed from your server.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>

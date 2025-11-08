@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Visual Docker Management with Portainer</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Portainer Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up Portainer for Visual Docker Management</h1>
+                    <p>A Guide to the Professional Hybrid Workflow</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">The "Hybrid" Philosophy: CLI for Control, GUI for Visibility</a></li>
+                        <li><a href="#section-2">Part 1: Installing Portainer</a></li>
+                        <li><a href="#section-3">Part 2: First-Time Setup</a></li>
+                        <li><a href="#section-4">Part 3: The Hybrid Workflow in Action</a></li>
+                        <li><a href="#section-5">Part 4: Securing Portainer with a Domain and SSL (Optional)</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>The "Hybrid" Philosophy: CLI for Control, GUI for Visibility</h2>
+                    <p>This guide will help you set up Portainer, a powerful web GUI for Docker. We will follow a common professional workflow that combines the strengths of the command line (CLI) and a graphical interface (GUI):</p>
+                    <ul>
+                        <li><strong>Deploy & Update with the CLI:</strong> You will continue to manage your project's lifecycle (deploying, updating, and rebuilding) from the command line using <code>docker compose</code>. This keeps your project's files as the "single source of truth" and is fast and reliable.</li>
+                        <li><strong>Monitor & Manage with Portainer:</strong> You will use the Portainer dashboard for all day-to-day monitoring and management tasks: checking logs, viewing resource usage (CPU/RAM), and performing quick actions like restarting a single container.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Part 1: Installing Portainer</h2>
+                    <h3>Step 1: Create the Project Directory</h3>
+                    <p>Just like our other services, we will give Portainer its own organized folder.</p>
+                    <pre><code class="language-bash"># Create a dedicated directory for the Portainer service
+mkdir /root/docker-deployment/portainer
+</code></pre>
+
+                    <h3>Step 2: Create the `docker-compose.yml` for Portainer</h3>
+                    <p>Create and edit the compose file for Portainer.</p>
+                    <pre><code class="language-bash">nano /root/docker-deployment/portainer/docker-compose.yml
+</code></pre>
+                    <p>Paste the following configuration into the file:</p>
+                    <pre><code class="language-yaml">services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      # Exposes Portainer's UI on port 9443 (HTTPS)
+      - "9443:9443"
+      # This port is also needed for the Portainer agent
+      - "9000:9000" 
+    volumes:
+      # This is the "special telephone line" that lets Portainer control Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # This persists Portainer's own data (users, settings, etc.)
+      - ./portainer_data:/data
+</code></pre>
+
+                    <h3>Step 3: Launch Portainer</h3>
+                    <pre><code class="language-bash"># Navigate to the portainer directory
+cd /root/docker-deployment/portainer
+
+# Start the service
+docker compose up -d
+</code></pre>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: First-Time Setup</h2>
+                    <ol>
+                        <li>Open your browser and go to <code>https://YOUR_SERVER_IP:9443</code>.</li>
+                        <li>Your browser will show a security warning because the certificate is self-signed. This is normal. Click "Advanced" and "Proceed to..." to continue.</li>
+                        <li>Portainer will ask you to create a new `admin` user and a strong password. Do this now.</li>
+                        <li>On the next screen, it will ask which Docker environment you want to manage. Choose **"Get Started"** to manage the local Docker environment that Portainer is running in.</li>
+                    </ol>
+                    <p>You will now be on the main Portainer dashboard, where you can see a summary of your Docker environment.</p>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Part 3: The Hybrid Workflow in Action</h2>
+                    <p>This section explains how to use the CLI and Portainer together for a smooth and powerful workflow.</p>
+                    
+                    <h3>Understanding "Limited Control"</h3>
+                    <div class="info-box">
+                        <p>When you navigate to the <strong>Stacks</strong> menu in Portainer, you will see all your projects (`proxy-manager`, `flask_app_1`, etc.) listed, but they will be marked as **"Limited"**. This is normal and expected for our workflow.</p>
+                        <p>It simply means that Portainer sees the stack is running, but it knows the "source of truth" is the `docker-compose.yml` file on your server, not a configuration stored in Portainer's database. This is perfect for our use case, as it still gives us full control over the individual containers.</p>
+                    </div>
+
+                    <h3>Deploying and Updating with the CLI</h3>
+                    <p>This part of your workflow does not change. When you want to deploy a new app or update an existing one with new code, you will use the command line.</p>
+                    <pre><code class="language-bash"># Example for updating the first app
+# 1. Upload your new code files with an SFTP client
+
+# 2. SSH into your server and navigate to the app's directory
+cd /root/docker-deployment/apps/flask_app_1
+
+# 3. Run the build and deploy command
+docker compose up --build -d
+</code></pre>
+                    
+                    <h3>Monitoring and Managing Containers in Portainer</h3>
+                    <p>Once your application is running, Portainer becomes your "cockpit" for monitoring.</p>
+                    <ol>
+                        <li>From the Portainer home screen, click on the **"local"** environment.</li>
+                        <li>In the left menu, click on **Containers**. You will now see a list of all your running containers.</li>
+                        <li>Click on any container name (e.g., `flask_app_one_app`) to see its details.</li>
+                    </ol>
+                    <p>From the Container details page, you can perform many useful actions:</p>
+                    <ul>
+                        <li><p><strong>Logs:</strong> View the real-time log output of your application. This is essential for debugging.</p></li>
+                        <li><p><strong>Inspect:</strong> See all the detailed Docker configuration for the container.</p></li>
+                        <li><p><strong>Stats:</strong> View a live graph of the CPU and Memory usage of your container.</p></li>
+                        <li><p><strong>Console:</strong> Open a command-line shell directly inside the running container for advanced troubleshooting.</p></li>
+                        <li><p><strong>Restart, Stop, Kill, Remove:</strong> The action buttons at the top allow you to control the container's state. `Restart` is particularly useful for a quick reboot without a full redeployment.</p></li>
+                    </ul>
+                </section>
+                
+                <section id="section-5">
+                    <h2>Part 4: Securing Portainer with a Domain and SSL (Optional)</h2>
+                    <p>Accessing Portainer via an IP address is fine, but it's more professional and secure to use a domain name with a valid SSL certificate. Since you already have Nginx Proxy Manager running, this is very easy.</p>
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create a new 'A' record for a subdomain like <code>docker.yourdomain.com</code> and point it to your server's IP address.</li>
+                        <li><strong>Log in to Nginx Proxy Manager:</strong> Go to <code>http://YOUR_SERVER_IP:81</code>.</li>
+                        <li><strong>Add a New Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Details Tab:</strong>
+                                    <ul>
+                                        <li><strong>Domain Names:</strong> <code>docker.yourdomain.com</code></li>
+                                        <li><strong>Scheme:</strong> <code>https</code></li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>portainer</code> (Docker's internal DNS will resolve this to the Portainer container).</li>
+                                        <li><strong>Forward Port:</strong> <code>9443</code> (The secure port for Portainer's UI).</li>
+                                        <li>Turn on <strong>"Websockets Support"</strong>, as Portainer uses it for live stats and logs.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
+                                <li><strong>Save.</strong></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p>After a minute, you can access your secure, professional Portainer dashboard at <code>https://docker.yourdomain.com</code> without any browser warnings.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>

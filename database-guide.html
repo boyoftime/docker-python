@@ -92,6 +92,7 @@
                         <li><a href="#section-4">Part 3: Connecting Your Application</a></li>
                         <li><a href="#section-5">Part 4: Database Management</a></li>
                         <li><a href="#section-6">Part 5: Allowing External Connections (Advanced)</a></li>
+                        <li><a href="#section-7">Part 6: Decommissioning the Database</a></li>
                     </ul>
                 </nav>
 
@@ -319,6 +320,46 @@ docker compose up -d
                         <li><strong>Open Firewall Port:</strong> In your VPS provider's firewall settings, create a rule to **ALLOW inbound TCP traffic on port 3306**. You can restrict this to your own IP address for added security.</li>
                     </ol>
                     <p>You can now connect using your server's public IP as the host.</p>
+                </section>
+
+
+                <section id="section-7">
+                    <h2>Part 6: Decommissioning the Database</h2>
+                    <p>If you no longer need your database, it's important to remove it cleanly to free up system resources. Follow these steps in order to permanently remove the database, phpMyAdmin, and all associated data.</p>
+                    
+                    <ol>
+                        <li>
+                            <strong>Remove the Proxy Host:</strong> First, remove the public-facing entry point. Log into Nginx Proxy Manager, find the host for your phpMyAdmin (e.g., <code>dbadmin.yourdomain.com</code>), click the three-dot menu, and delete it.
+                        </li>
+                        <li>
+                            <strong>Take Down the Docker Services:</strong> Navigate to the database project directory on your server and run the `down` command. The `-v` flag is important as it removes any anonymous volumes created by the containers.
+                            <pre><code class="language-bash"># Navigate to the database project directory
+cd /root/docker-deployment/database
+
+# Stop and remove the containers
+docker compose down -v
+</code></pre>
+                        </li>
+                        <li>
+                            <strong>Permanently Delete All Database Data:</strong> This is the most critical and irreversible step. The following command will delete the folder containing all of your MySQL databases.
+                            <div class="info-box" style="border-color: #dc3545;">
+                                <p><strong>⚠️ WARNING:</strong> This action will permanently delete all your database data. There is no undo. Make sure you have a backup if you ever want to restore this data.</p>
+                            </div>
+                            <pre><code class="language-bash"># This deletes the mysql-data folder and everything inside it
+rm -rf /root/docker-deployment/database/mysql-data
+</code></pre>
+                        </li>
+                        <li>
+                            <strong>Delete the Project Directory:</strong> Finally, clean up the remaining project files, including the `docker-compose.yml`.
+                            <pre><code class="language-bash"># Go up one directory level
+cd /root/docker-deployment
+
+# Delete the entire database project folder
+rm -rf database
+</code></pre>
+                        </li>
+                    </ol>
+                    <p>The central database and phpMyAdmin have now been completely removed from your server.</p>
                 </section>
             </div>
         </main>

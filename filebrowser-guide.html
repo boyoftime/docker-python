@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up FileBrowser - A Web-Based File Manager</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>File Manager Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up FileBrowser: A Web-Based File Manager</h1>
+                    <p>A Lightweight, Secure, and Convenient Way to Manage Your Server Files</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">Why Use a Web File Manager?</a></li>
+                        <li><a href="#section-2">Part 1: Foolproof Installation with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Finding Your Password and First Login</a></li>
+                        <li><a href="#section-4">Part 3: Securing FileBrowser with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-5">Part 4: Decommissioning FileBrowser</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>Why Use a Web File Manager?</h2>
+                    <p>While SFTP clients like FileZilla are powerful, a web-based file manager like FileBrowser offers incredible convenience. It allows you to quickly upload files, create folders, and edit configuration files directly from your browser, anywhere in the world, without needing any special software.</p>
+                    <p>FileBrowser is an excellent, lightweight, and modern tool that is perfect for managing the configuration files of your various Docker projects.</p>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Part 1: Foolproof Installation with Docker</h2>
+                    <p>We will follow a precise, multi-step process to ensure a perfect and persistent setup from the very first launch. This method pre-creates the configuration file so FileBrowser knows exactly where to save its database, avoiding common permission and persistence problems.</p>
+
+                    <h3>Step 1: Create the Main Project Directory</h3>
+                    <pre><code class="language-bash"># Create a dedicated directory for the FileBrowser service
+mkdir /root/docker-deployment/filebrowser
+</code></pre>
+
+                    <h3>Step 2: Create the Configuration Directory</h3>
+                    <p>Inside the new `filebrowser` directory, we need to create a folder that will permanently store our configuration.</p>
+                    <pre><code class="language-bash">mkdir /root/docker-deployment/filebrowser/config
+</code></pre>
+
+                    <h3>Step 3: Create the `settings.json` Configuration File</h3>
+                    <p>This is the most important step. We will create the configuration file *before* Docker does. This tells FileBrowser exactly how to behave on its first run.</p>
+                    <pre><code class="language-bash"># Create and open the new settings file for editing
+nano /root/docker-deployment/filebrowser/config/settings.json
+</code></pre>
+                    <p>Paste the following JSON content into the file. The key is the `"database"` line, which forces it to save the database inside our persistent `config` folder.</p>
+                    <pre><code class="language-json">{
+  "port": 80,
+  "baseURL": "",
+  "address": "",
+  "log": "stdout",
+  "database": "/config/filebrowser.db",
+  "root": "/srv"
+}
+</code></pre>
+                    <p>Save and exit the editor (<code>CTRL + X</code>, <code>Y</code>, <code>Enter</code>).</p>
+                    
+                    <h3>Step 4: Create the `docker-compose.yml` File</h3>
+                    <p>Now, create the Docker Compose file that will run the service.</p>
+                    <pre><code class="language-bash">nano /root/docker-deployment/filebrowser/docker-compose.yml
+</code></pre>
+                    <p>Paste the following final, corrected configuration. This uses the reliable `s6` image and sets the correct permissions to manage your `root` user's files.</p>
+                    <pre><code class="language-yaml">services:
+  filebrowser:
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    restart: unless-stopped
+    ports:
+      - "8089:80"
+    environment:
+      - PUID=0
+      - PGID=0
+    volumes:
+      # This gives FileBrowser access to all your project files
+      - /root/docker-deployment:/srv
+      # This maps our pre-made config folder into the container
+      - ./config:/config
+</code></pre>
+
+                    <h3>Step 5: Launch FileBrowser</h3>
+                    <p>Now, everything is perfectly configured. Navigate to the directory and start the service.</p>
+                    <pre><code class="language-bash"># Navigate to the filebrowser directory
+cd /root/docker-deployment/filebrowser
+
+# Start the service
+docker compose up -d
+</code></pre>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: Finding Your Password and First Login</h2>
+                    <p>For security, FileBrowser no longer uses a default password. On the first run, it generates a unique, random password for the `admin` user. You must retrieve this from the container's logs.</p>
+                    
+                    <h3>Step 1: Check the Logs for Your Password</h3>
+                    <pre><code class="language-bash"># From inside the /root/docker-deployment/filebrowser directory
+docker compose logs
+</code></pre>
+                    <p>Look through the output for a line that looks like this:</p>
+                    <pre><code class="language-text">...
+User 'admin' initialized with randomly generated password: some_random_password_here
+...</code></pre>
+                    <p>Copy that randomly generated password.</p>
+                    
+                    <h3>Step 2: Log In and Change Your Password</h3>
+                    <ol>
+                        <li>Open your browser and navigate to <code>http://YOUR_SERVER_IP:8089</code>.</li>
+                        <li>Log in with the following credentials:
+                            <ul>
+                                <li>Username: <code>admin</code></li>
+                                <li>Password: <strong>(the random password you copied from the logs)</strong></li>
+                            </ul>
+                        </li>
+                        <li style="font-weight: bold;">Immediately go to "Settings" in the left sidebar and change your password to something strong and memorable. This is a critical security step.</li>
+                        <li>After logging in, you will see a single folder named <code>srv</code>. Click on it to enter your main <code>/root/docker-deployment</code> directory and manage your files.</li>
+                    </ol>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Part 3: Securing FileBrowser with Nginx Proxy Manager</h2>
+                    <p>Accessing your file system over the internet requires the best security. We will use Nginx Proxy Manager to add a domain name and a strong SSL certificate.</p>
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create an 'A' record for a subdomain like <code>files.yourdomain.com</code> and point it to your server's IP.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
+                        <li><strong>Add a New Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Details Tab:</strong>
+                                    <ul>
+                                        <li><strong>Domain Names:</strong> <code>files.yourdomain.com</code></li>
+                                        <li><strong>Scheme:</strong> <code>http</code></li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>filebrowser</code> (This is the service name from your `docker-compose.yml`).</li>
+                                        <li><strong>Forward Port:</strong> <code>80</code> (The internal port inside the Docker network).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
+                                <li><strong>Save.</strong></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p>You can now access your secure, encrypted file manager at <code>https://files.yourdomain.com</code>. Make sure you have set a very strong password!</p>
+                </section>
+                
+                <section id="section-5">
+                    <h2>Part 4: Decommissioning FileBrowser</h2>
+                    <p>If you wish to remove FileBrowser, follow these steps for a clean uninstall.</p>
+                     <ol>
+                        <li>
+                            <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the proxy host for `files.yourdomain.com`.
+                        </li>
+                        <li>
+                            <strong>Take Down the Docker Service:</strong> Navigate to the FileBrowser directory and run the `down` command. Using `-v` removes the service's anonymous volumes (though our main configuration is in the named `config` folder, this is still good practice).
+                            <pre><code class="language-bash">cd /root/docker-deployment/filebrowser
+docker compose down -v
+</code></pre>
+                        </li>
+                         <li>
+                            <strong>Delete the Project Folder:</strong> Remove the directory and all its configuration files permanently.
+                             <pre><code class="language-bash"># Go up one directory
+cd ..
+
+# Permanently delete the filebrowser project folder
+rm -rf filebrowser
+</code></pre>
+                         </li>
+                    </ol>
+                     <p>FileBrowser has been completely removed from your server.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>
