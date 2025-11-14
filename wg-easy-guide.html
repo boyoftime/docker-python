@@ -1,3 +1,5 @@
+--- START OF FILE wg-easy-guide.html ---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,7 +108,7 @@ mkdir /root/docker-deployment/wg-easy
                     <h3>Step 2: Create the `docker-compose.yml` File</h3>
                     <pre><code class="language-bash">nano /root/docker-deployment/wg-easy/docker-compose.yml
 </code></pre>
-                    <p>Paste the following configuration. Be sure to edit the two required variables.</p>
+                    <p>Paste the following configuration. This file connects WG-Easy to the shared network, allowing the web UI to be secured. Be sure to edit the two required variables.</p>
                     <pre><code class="language-yaml">services:
   wg-easy:
     image: weejewel/wg-easy:latest
@@ -114,7 +116,7 @@ mkdir /root/docker-deployment/wg-easy
     environment:
       # --- REQUIRED VARIABLES (EDIT THESE) ---
 
-      # 1. Set the public IP address of your server.
+      # 1. Set the public IP address or a dedicated domain for the VPN connection.
       # This is used to generate correct client config files.
       - WG_HOST=YOUR_SERVER_IP
 
@@ -143,6 +145,14 @@ mkdir /root/docker-deployment/wg-easy
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv4.ip_forward=1
+    # Connect the container to our shared proxy network.
+    networks:
+      - nginx-proxy
+
+# Declare that our shared network is external and pre-existing.
+networks:
+  nginx-proxy:
+    external: true
 </code></pre>
                     <div class="info-box"><p><strong>Firewall Note:</strong> Before starting, ensure your VPS provider's firewall allows incoming traffic on port <strong>51821/TCP</strong> (for the web UI) and port <strong>51820/UDP</strong> (for the VPN connection).</p></div>
 

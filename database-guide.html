@@ -155,6 +155,8 @@ nano /root/docker-deployment/database/docker-compose.yml
       # 'db' is the SERVICE NAME of our MySQL container above.
       PMA_HOST: db
       PMA_PORT: 3306
+    ports:
+    - "8082:80" # Map host port 8082 to the container's internal port 80
     depends_on:
       - db # Ensures the database starts before phpMyAdmin tries to connect.
     networks:
@@ -176,6 +178,8 @@ cd /root/docker-deployment/database
 docker compose up -d
 </code></pre>
                     <p>Docker will now download the MySQL and phpMyAdmin images and start your database stack. A folder named `mysql-data` will appear in your current directory, safely storing your database.</p>
+                    
+                    <p>You can now access the phpMyAdmin login page directly at <code>http://YOUR_SERVER_IP:8082</code>.</p>
                 </section>
 
                 <section id="section-3">

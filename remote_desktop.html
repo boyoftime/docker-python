@@ -1,11 +1,9 @@
---- START OF FILE filebrowser-guide.html ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide: Setting Up FileBrowser - A Web-Based File Manager</title>
+    <title>Guide: Setting Up a Webtop Remote Desktop</title>
 
     <!-- Prism JS for Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
@@ -66,7 +64,7 @@
 <body>
 
     <header class="page-header">
-        <h4>File Manager Guide</h4>
+        <h4>Remote Desktop Guide</h4>
         <div class="theme-switch-wrapper">
             <span>☀️</span>
             <label class="theme-switch" for="checkbox">
@@ -81,92 +79,74 @@
         <main>
             <div class="content-card">
                 <header style="text-align:center; margin-bottom: 3rem;">
-                    <h1>Setting Up FileBrowser: A Web-Based File Manager</h1>
-                    <p>A Lightweight, Secure, and Convenient Way to Manage Your Server Files</p>
+                    <h1>Setting Up a Webtop Remote Desktop</h1>
+                    <p>A Full Linux Desktop with Modern Browsers, Right in Your Browser</p>
                 </header>
 
                 <nav class="toc">
                     <h3>Table of Contents</h3>
                     <ul>
-                        <li><a href="#section-1">Why Use a Web File Manager?</a></li>
-                        <li><a href="#section-2">Part 1: Foolproof Installation with Docker</a></li>
-                        <li><a href="#section-3">Part 2: Finding Your Password and First Login</a></li>
-                        <li><a href="#section-4">Part 3: Securing FileBrowser with Nginx Proxy Manager</a></li>
-                        <li><a href="#section-5">Part 4: Decommissioning FileBrowser</a></li>
+                        <li><a href="#section-1">What is Webtop?</a></li>
+                        <li><a href="#section-2">Part 1: Installing Webtop with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Understanding the HTTPS Requirement</a></li>
+                        <li><a href="#section-4">Part 3: The Solution - Securing with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-5">Part 4: Using Your Remote Desktop</a></li>
+                        <li><a href="#section-6">Part 5: Decommissioning Webtop</a></li>
                     </ul>
                 </nav>
 
                 <section id="section-1">
-                    <h2>Why Use a Web File Manager?</h2>
-                    <p>While SFTP clients like FileZilla are powerful, a web-based file manager like FileBrowser offers incredible convenience. It allows you to quickly upload files, create folders, and edit configuration files directly from your browser, anywhere in the world, without needing any special software.</p>
-                    <p>FileBrowser is an excellent, lightweight, and modern tool that is perfect for managing the configuration files of your various Docker projects.</p>
+                    <h2>What is Webtop?</h2>
+                    <p>Webtop provides a full-featured and high-performance Linux desktop environment (XFCE) that runs in a Docker container and is accessible from any modern web browser. It comes pre-packaged with popular browsers like Firefox and Chrome, along with common desktop utilities.</p>
+                    <p>This is a fantastic solution for secure browsing, accessing region-specific content, or just having a consistent desktop environment available from anywhere.</p>
                 </section>
                 
                 <section id="section-2">
-                    <h2>Part 1: Foolproof Installation with Docker</h2>
-                    <p>We will follow a precise, multi-step process to ensure a perfect and persistent setup from the very first launch. This method pre-creates the configuration file so FileBrowser knows exactly where to save its database, avoiding common permission and persistence problems.</p>
+                    <h2>Part 1: Installing Webtop with Docker</h2>
+                    <p>We will set up Webtop as a self-contained service, ready to be connected to our secure proxy.</p>
 
-                    <h3>Step 1: Create the Main Project Directory</h3>
-                    <pre><code class="language-bash"># Create a dedicated directory for the FileBrowser service
-mkdir /root/docker-deployment/filebrowser
-</code></pre>
-
-                    <h3>Step 2: Create the Configuration Directory</h3>
-                    <p>Inside the new `filebrowser` directory, we need to create a folder that will permanently store our configuration.</p>
-                    <pre><code class="language-bash">mkdir /root/docker-deployment/filebrowser/config
+                    <h3>Step 1: Create the Project Directory</h3>
+                    <pre><code class="language-bash"># Create a dedicated directory for the Webtop service
+mkdir /root/docker-deployment/webtop
 </code></pre>
 
-                    <h3>Step 3: Create the `settings.json` Configuration File</h3>
-                    <p>This is the most important step. We will create the configuration file *before* Docker does. This tells FileBrowser exactly how to behave on its first run.</p>
-                    <pre><code class="language-bash"># Create and open the new settings file for editing
-nano /root/docker-deployment/filebrowser/config/settings.json
+                    <h3>Step 2: Create the `docker-compose.yml` File</h3>
+                    <pre><code class="language-bash">nano /root/docker-deployment/webtop/docker-compose.yml
 </code></pre>
-                    <p>Paste the following JSON content into the file. The key is the `"database"` line, which forces it to save the database inside our persistent `config` folder.</p>
-                    <pre><code class="language-json">{
-  "port": 80,
-  "baseURL": "",
-  "address": "",
-  "log": "stdout",
-  "database": "/config/filebrowser.db",
-  "root": "/srv"
-}
-</code></pre>
-                    <p>Save and exit the editor (<code>CTRL + X</code>, <code>Y</code>, <code>Enter</code>).</p>
-                    
-                    <h3>Step 4: Create the `docker-compose.yml` File</h3>
-                    <p>Now, create the Docker Compose file that will run the service.</p>
-                    <pre><code class="language-bash">nano /root/docker-deployment/filebrowser/docker-compose.yml
-</code></pre>
-                    <p>Paste the following final, corrected configuration. It uses the reliable `s6` image, sets the correct permissions, and connects the service to your shared proxy network.</p>
+                    <p>Paste the following content. This configuration sets up Webtop, exposes a port for testing, and connects it to our shared proxy network.</p>
                     <pre><code class="language-yaml">services:
-  filebrowser:
-    image: filebrowser/filebrowser:s6
-    container_name: filebrowser
+  webtop:
+    image: lscr.io/linuxserver/webtop:latest
+    container_name: webtop
     restart: unless-stopped
-    ports:
-      - "8089:80"
     environment:
-      - PUID=0
-      - PGID=0
+      - PUID=1000 # Standard User ID
+      - PGID=1000 # Standard Group ID
+      - TZ=Etc/UTC # Optional: Change to your timezone, e.g., "America/New_York"
     volumes:
-      # This gives FileBrowser access to all your project files
-      - /root/docker-deployment:/srv
-      # This maps our pre-made config folder into the container
+      # CRITICAL: This persists your entire desktop configuration and files.
       - ./config:/config
-    # Connect this service to the shared proxy network
+    ports:
+      # Expose port 8090 on the host to test the connection.
+      - "8090:3000"
+    # A full desktop requires more shared memory to prevent browser crashes.
+    shm_size: '2gb'
+    # Connect this service to our shared proxy network for secure access.
     networks:
       - nginx-proxy
 
-# Declare the shared network as external so Docker doesn't try to create it
+# Declare that our shared network is external and pre-existing.
 networks:
   nginx-proxy:
     external: true
 </code></pre>
 
-                    <h3>Step 5: Launch FileBrowser</h3>
-                    <p>Now, everything is perfectly configured. Navigate to the directory and start the service.</p>
-                    <pre><code class="language-bash"># Navigate to the filebrowser directory
-cd /root/docker-deployment/filebrowser
+                    <h3>Step 3: Open Firewall Port for Testing</h3>
+                    <p>Before starting, go to your VPS provider's firewall settings and create a rule to **ALLOW inbound TCP traffic on port 8090**. We will use this port only for our initial test.</p>
+                
+                    <h3>Step 4: Launch Webtop</h3>
+                    <pre><code class="language-bash"># Navigate to the webtop directory
+cd /root/docker-deployment/webtop
 
 # Start the service
 docker compose up -d
@@ -174,81 +154,76 @@ docker compose up -d
                 </section>
 
                 <section id="section-3">
-                    <h2>Part 2: Finding Your Password and First Login</h2>
-                    <p>For security, FileBrowser no longer uses a default password. On the first run, it generates a unique, random password for the `admin` user. You must retrieve this from the container's logs.</p>
-                    
-                    <h3>Step 1: Check the Logs for Your Password</h3>
-                    <pre><code class="language-bash"># From inside the /root/docker-deployment/filebrowser directory
-docker compose logs
-</code></pre>
-                    <p>Look through the output for a line that looks like this:</p>
-                    <pre><code class="language-text">...
-User 'admin' initialized with randomly generated password: some_random_password_here
-...</code></pre>
-                    <p>Copy that randomly generated password.</p>
-                    
-                    <h3>Step 2: Log In and Change Your Password</h3>
+                    <h2>Part 2: Understanding the HTTPS Requirement</h2>
+                    <p>Now that the service is running, let's see why a direct connection is not the final solution.</p>
                     <ol>
-                        <li>Open your browser and navigate to <code>http://YOUR_SERVER_IP:8089</code>.</li>
-                        <li>Log in with the following credentials:
-                            <ul>
-                                <li>Username: <code>admin</code></li>
-                                <li>Password: <strong>(the random password you copied from the logs)</strong></li>
-                            </ul>
-                        </li>
-                        <li style="font-weight: bold;">Immediately go to "Settings" in the left sidebar and change your password to something strong and memorable. This is a critical security step.</li>
-                        <li>After logging in, you will see a single folder named <code>srv</code>. Click on it to enter your main <code>/root/docker-deployment</code> directory and manage your files.</li>
+                        <li>Open your browser and navigate to <code>http://YOUR_SERVER_IP:8090</code>.</li>
+                        <li>You will be greeted with a black screen and an error message: <br><code>Error: This application requires a secure connection (HTTPS). Please check the URL.</code></li>
                     </ol>
+                    <div class="info-box">
+                        <p>This is not a bug; it's an important security feature. Webtop is designed to prevent you from using it over an insecure connection. The correct and professional way to access it is by placing it behind Nginx Proxy Manager to provide the necessary SSL certificate (HTTPS).</p>
+                    </div>
                 </section>
                 
                 <section id="section-4">
-                    <h2>Part 3: Securing FileBrowser with Nginx Proxy Manager</h2>
-                    <p>Accessing your file system over the internet requires the best security. We will use Nginx Proxy Manager to add a domain name and a strong SSL certificate.</p>
+                    <h2>Part 3: The Solution - Securing with Nginx Proxy Manager</h2>
+                    <p>Follow these steps to make your Webtop instance live and secure.</p>
                     <ol>
-                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create an 'A' record for a subdomain like <code>files.yourdomain.com</code> and point it to your server's IP.</li>
+                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create a new 'A' record for a subdomain like <code>desktop.yourdomain.com</code> and point it to your server's IP.</li>
                         <li><strong>Log in to Nginx Proxy Manager.</strong></li>
                         <li><strong>Add a New Proxy Host:</strong>
                             <ul>
                                 <li><strong>Details Tab:</strong>
                                     <ul>
-                                        <li><strong>Domain Names:</strong> <code>files.yourdomain.com</code></li>
+                                        <li><strong>Domain Names:</strong> <code>desktop.yourdomain.com</code></li>
                                         <li><strong>Scheme:</strong> <code>http</code></li>
-                                        <li><strong>Forward Hostname / IP:</strong> <code>filebrowser</code> (This is the service name from your `docker-compose.yml`).</li>
-                                        <li><strong>Forward Port:</strong> <code>80</code> (The internal port inside the Docker network).</li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>webtop</code> (This MUST match the service name in the `docker-compose.yml`).</li>
+                                        <li><strong>Forward Port:</strong> <code>3000</code> (The internal port of the Webtop container, not the public 8090 port).</li>
+                                        <li><strong style="color: #dc3545;">IMPORTANT:</strong> Turn on <strong>"Websockets Support"</strong>.</li>
                                     </ul>
                                 </li>
                                 <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
                                 <li><strong>Save.</strong></li>
                             </ul>
                         </li>
+                        <li><strong>Clean Up Firewall (Security Step):</strong> After confirming your new secure domain works, go back to your VPS provider's firewall settings and **DELETE the rule for port 8090**. All traffic will now go securely through port 443 via the proxy manager.</li>
                     </ol>
-                    <p>You can now access your secure, encrypted file manager at <code>https://files.yourdomain.com</code>. Make sure you have set a very strong password!</p>
+                    <p>After about a minute, your secure remote desktop will be fully accessible at <code>https://desktop.yourdomain.com</code>.</p>
                 </section>
-                
+
                 <section id="section-5">
-                    <h2>Part 4: Decommissioning FileBrowser</h2>
-                    <p>If you wish to remove FileBrowser, follow these steps for a clean uninstall.</p>
+                    <h2>Part 4: Using Your Remote Desktop</h2>
+                    <p>Navigating to your secure URL will instantly load the desktop. There is no password by default. You can start using the pre-installed applications right away.</p>
+                    <ul>
+                        <li><strong>Persistent Storage:</strong> Any files you download or create on the desktop will be saved in the <code>/root/docker-deployment/webtop/config</code> folder on your server. Your browser profiles, bookmarks, and extensions are also saved here, so your session persists even after restarting the container.</li>
+                        <li><strong>File Uploads:</strong> You can drag and drop files from your computer directly onto the Webtop browser window to upload them to the desktop's "Uploads" folder.</li>
+                    </ul>
+                </section>
+
+                <section id="section-6">
+                    <h2>Part 5: Decommissioning Webtop</h2>
+                    <p>If you no longer need the remote desktop, follow these steps for a clean removal.</p>
                      <ol>
                         <li>
-                            <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the proxy host for `files.yourdomain.com`.
+                            <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the proxy host you created for Webtop (e.g., `desktop.yourdomain.com`).
                         </li>
                         <li>
-                            <strong>Take Down the Docker Service:</strong> Navigate to the FileBrowser directory and run the `down` command. Using `-v` removes the service's anonymous volumes (though our main configuration is in the named `config` folder, this is still good practice).
-                            <pre><code class="language-bash">cd /root/docker-deployment/filebrowser
+                            <strong>Take Down the Docker Service:</strong> Navigate to the Webtop project directory. The `-v` flag is critical as it removes the volume containing your desktop's entire configuration and files.
+                            <pre><code class="language-bash">cd /root/docker-deployment/webtop
 docker compose down -v
 </code></pre>
                         </li>
                          <li>
-                            <strong>Delete the Project Folder:</strong> Remove the directory and all its configuration files permanently.
-                             <pre><code class="language-bash"># Go up one directory
+                            <strong>Delete the Project Folder:</strong> Finally, remove the project directory itself.
+                             <pre><code class="language-bash"># Go up one directory level
 cd ..
 
-# Permanently delete the filebrowser project folder
-rm -rf filebrowser
+# Be careful! This command permanently deletes the folder.
+rm -rf webtop
 </code></pre>
                          </li>
                     </ol>
-                     <p>FileBrowser has been completely removed from your server.</p>
+                     <p>The Webtop remote desktop has been completely removed from your server.</p>
                 </section>
             </div>
         </main>
