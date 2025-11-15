@@ -1,5 +1,3 @@
---- START OF FILE filebrowser-guide.html ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,7 +88,7 @@
                     <ul>
                         <li><a href="#section-1">Why Use a Web File Manager?</a></li>
                         <li><a href="#section-2">Part 1: Foolproof Installation with Docker</a></li>
-                        <li><a href="#section-3">Part 2: Finding Your Password and First Login</a></li>
+                        <li><a href="#section-3">Part 2: First Login & Setup</a></li>
                         <li><a href="#section-4">Part 3: Securing FileBrowser with Nginx Proxy Manager</a></li>
                         <li><a href="#section-5">Part 4: Decommissioning FileBrowser</a></li>
                     </ul>
@@ -99,105 +97,86 @@
                 <section id="section-1">
                     <h2>Why Use a Web File Manager?</h2>
                     <p>While SFTP clients like FileZilla are powerful, a web-based file manager like FileBrowser offers incredible convenience. It allows you to quickly upload files, create folders, and edit configuration files directly from your browser, anywhere in the world, without needing any special software.</p>
-                    <p>FileBrowser is an excellent, lightweight, and modern tool that is perfect for managing the configuration files of your various Docker projects.</p>
+                    <p>This guide provides a robust setup that avoids common file permission issues, giving you a tool that works just as reliably as a traditional SFTP client.</p>
                 </section>
                 
                 <section id="section-2">
                     <h2>Part 1: Foolproof Installation with Docker</h2>
-                    <p>We will follow a precise, multi-step process to ensure a perfect and persistent setup from the very first launch. This method pre-creates the configuration file so FileBrowser knows exactly where to save its database, avoiding common permission and persistence problems.</p>
+                    <p>We will use a specific, known-good version of FileBrowser to ensure it has the correct permissions to manage all your project files without conflicts.</p>
 
-                    <h3>Step 1: Create the Main Project Directory</h3>
+                    <h3>Step 1: Create the Project and Config Directories</h3>
                     <pre><code class="language-bash"># Create a dedicated directory for the FileBrowser service
 mkdir /root/docker-deployment/filebrowser
+
+# Inside, create a folder that will permanently store our configuration
+mkdir /root/docker-deployment/filebrowser/config
 </code></pre>
 
-                    <h3>Step 2: Create the Configuration Directory</h3>
-                    <p>Inside the new `filebrowser` directory, we need to create a folder that will permanently store our configuration.</p>
-                    <pre><code class="language-bash">mkdir /root/docker-deployment/filebrowser/config
-</code></pre>
-
-                    <h3>Step 3: Create the `settings.json` Configuration File</h3>
-                    <p>This is the most important step. We will create the configuration file *before* Docker does. This tells FileBrowser exactly how to behave on its first run.</p>
-                    <pre><code class="language-bash"># Create and open the new settings file for editing
-nano /root/docker-deployment/filebrowser/config/settings.json
-</code></pre>
-                    <p>Paste the following JSON content into the file. The key is the `"database"` line, which forces it to save the database inside our persistent `config` folder.</p>
-                    <pre><code class="language-json">{
-  "port": 80,
-  "baseURL": "",
-  "address": "",
-  "log": "stdout",
-  "database": "/config/filebrowser.db",
-  "root": "/srv"
-}
-</code></pre>
-                    <p>Save and exit the editor (<code>CTRL + X</code>, <code>Y</code>, <code>Enter</code>).</p>
-                    
-                    <h3>Step 4: Create the `docker-compose.yml` File</h3>
+                    <h3>Step 2: Create the `docker-compose.yml` File</h3>
                     <p>Now, create the Docker Compose file that will run the service.</p>
                     <pre><code class="language-bash">nano /root/docker-deployment/filebrowser/docker-compose.yml
 </code></pre>
-                    <p>Paste the following final, corrected configuration. It uses the reliable `s6` image, sets the correct permissions, and connects the service to your shared proxy network.</p>
+                    <p>Paste the following final, corrected configuration. It uses a specific version of FileBrowser known to work correctly with root permissions, and explicitly tells it where to store its data.</p>
                     <pre><code class="language-yaml">services:
   filebrowser:
-    image: filebrowser/filebrowser:s6
+    # We pin the image to a version before breaking permission changes were introduced.
+    image: filebrowser/filebrowser:v2.29.0
     container_name: filebrowser
+
+    # This directive forces the container process to run as the root user,
+    # giving it the same permissions as your SFTP client.
+    user: "0:0"
+
+    # This explicitly tells FileBrowser where to find its database and
+    # which folder to use as the main directory.
+    command:
+      - "--database=/config/filebrowser.db"
+      - "--root=/srv"
+
     restart: unless-stopped
     ports:
       - "8089:80"
-    environment:
-      - PUID=0
-      - PGID=0
     volumes:
-      # This gives FileBrowser access to all your project files
+      # This gives FileBrowser access to all your project files.
       - /root/docker-deployment:/srv
-      # This maps our pre-made config folder into the container
+      # This maps our persistent config folder into the container.
       - ./config:/config
-    # Connect this service to the shared proxy network
     networks:
+      # Connect this service to the shared proxy network.
       - nginx-proxy
 
-# Declare the shared network as external so Docker doesn't try to create it
+# Declare the shared network as external so Docker doesn't try to create it.
 networks:
   nginx-proxy:
     external: true
 </code></pre>
 
-                    <h3>Step 5: Launch FileBrowser</h3>
-                    <p>Now, everything is perfectly configured. Navigate to the directory and start the service.</p>
+                    <h3>Step 3: Launch FileBrowser</h3>
+                    <p>With the configuration set, navigate to the directory and start the service.</p>
                     <pre><code class="language-bash"># Navigate to the filebrowser directory
 cd /root/docker-deployment/filebrowser
 
-# Start the service
+# Download the specified image and start the service
 docker compose up -d
 </code></pre>
                 </section>
 
                 <section id="section-3">
-                    <h2>Part 2: Finding Your Password and First Login</h2>
-                    <p>For security, FileBrowser no longer uses a default password. On the first run, it generates a unique, random password for the `admin` user. You must retrieve this from the container's logs.</p>
+                    <h2>Part 2: First Login & Setup</h2>
+                    <p>The version of FileBrowser we are using has simple, default credentials for the first login. It is critical to change these immediately.</p>
                     
-                    <h3>Step 1: Check the Logs for Your Password</h3>
-                    <pre><code class="language-bash"># From inside the /root/docker-deployment/filebrowser directory
-docker compose logs
-</code></pre>
-                    <p>Look through the output for a line that looks like this:</p>
-                    <pre><code class="language-text">...
-User 'admin' initialized with randomly generated password: some_random_password_here
-...</code></pre>
-                    <p>Copy that randomly generated password.</p>
-                    
-                    <h3>Step 2: Log In and Change Your Password</h3>
                     <ol>
                         <li>Open your browser and navigate to <code>http://YOUR_SERVER_IP:8089</code>.</li>
-                        <li>Log in with the following credentials:
+                        <li>Log in with the following default credentials:
                             <ul>
                                 <li>Username: <code>admin</code></li>
-                                <li>Password: <strong>(the random password you copied from the logs)</strong></li>
+                                <li>Password: <code>admin</code></li>
                             </ul>
                         </li>
-                        <li style="font-weight: bold;">Immediately go to "Settings" in the left sidebar and change your password to something strong and memorable. This is a critical security step.</li>
-                        <li>After logging in, you will see a single folder named <code>srv</code>. Click on it to enter your main <code>/root/docker-deployment</code> directory and manage your files.</li>
+                        <div class="info-box" style="border-color: #dc3545; margin: 1rem 0;">
+                            <p><strong>⚠️ Critical Security Step:</strong> Immediately after logging in, click "Settings" in the left sidebar and change your password to something strong and memorable. Your settings will now be saved permanently.</p>
+                        </div>
+                        <li>After changing your password, click "My files" or the home icon. You will see a single folder named `docker-deployment`. Click on it to enter your main project directory and manage all your application files.</li>
                     </ol>
                 </section>
                 
@@ -233,7 +212,7 @@ User 'admin' initialized with randomly generated password: some_random_password_
                             <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the proxy host for `files.yourdomain.com`.
                         </li>
                         <li>
-                            <strong>Take Down the Docker Service:</strong> Navigate to the FileBrowser directory and run the `down` command. Using `-v` removes the service's anonymous volumes (though our main configuration is in the named `config` folder, this is still good practice).
+                            <strong>Take Down the Docker Service:</strong> Navigate to the FileBrowser directory and run the `down` command. Using `-v` is good practice to remove the service's anonymous volumes.
                             <pre><code class="language-bash">cd /root/docker-deployment/filebrowser
 docker compose down -v
 </code></pre>
