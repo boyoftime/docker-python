@@ -115,7 +115,7 @@ mkdir /root/docker-deployment/portainer
                     <p>Create and edit the compose file for Portainer.</p>
                     <pre><code class="language-bash">nano /root/docker-deployment/portainer/docker-compose.yml
 </code></pre>
-                    <p>Paste the following configuration into the file:</p>
+                    <p>Paste the following configuration into the file. This version connects Portainer to the shared proxy network, which is essential for securing it with a domain name.</p>
                     <pre><code class="language-yaml">services:
   portainer:
     image: portainer/portainer-ce:latest
@@ -131,9 +131,19 @@ mkdir /root/docker-deployment/portainer
       - /var/run/docker.sock:/var/run/docker.sock
       # This persists Portainer's own data (users, settings, etc.)
       - ./portainer_data:/data
+    # Connect this container to the shared proxy network.
+    networks:
+      - nginx-proxy
+
+# This section tells Docker that 'nginx-proxy' is a pre-existing network
+# and should not be created by this file.
+networks:
+  nginx-proxy:
+    external: true
 </code></pre>
 
                     <h3>Step 3: Launch Portainer</h3>
+                    <p>If you are updating from the old configuration, running this command will safely recreate the container with the new network setting without losing any data.</p>
                     <pre><code class="language-bash"># Navigate to the portainer directory
 cd /root/docker-deployment/portainer
 
@@ -204,7 +214,7 @@ docker compose up --build -d
                                     <ul>
                                         <li><strong>Domain Names:</strong> <code>docker.yourdomain.com</code></li>
                                         <li><strong>Scheme:</strong> <code>https</code></li>
-                                        <li><strong>Forward Hostname / IP:</strong> <code>portainer</code> (Docker's internal DNS will resolve this to the Portainer container).</li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>portainer</code> (Docker's internal DNS will resolve this to the Portainer container because it's on the same network).</li>
                                         <li><strong>Forward Port:</strong> <code>9443</code> (The secure port for Portainer's UI).</li>
                                         <li>Turn on <strong>"Websockets Support"</strong>, as Portainer uses it for live stats and logs.</li>
                                     </ul>

@@ -105,7 +105,7 @@
                         <li>The Nginx Proxy Manager container up and running.</li>
                     </ul>
                     <div class="info-box">
-                        <p><strong>Architecture Reminder:</strong> We are creating a new, independent service for our database. This is a best practice because it decouples your data from your application logic. You can restart, update, or even replace your application containers without ever touching your database.</p>
+                        <p><strong>Architecture Reminder:</strong> We are creating a new, independent service for our database. This decouples your data from your application logic. The primary connection method is over the secure, internal Docker network, which is fast and does not require exposing the database to the internet.</p>
                     </div>
                 </section>
                 
@@ -118,11 +118,11 @@ mkdir /root/docker-deployment/database
 </code></pre>
 
                     <h3>Step 2: Create the Database `docker-compose.yml`</h3>
-                    <p>This single file defines both the MySQL database and the phpMyAdmin management interface.</p>
+                    <p>This single file defines both the MySQL database and the phpMyAdmin management interface. The default configuration below is the most secure, as it does not expose the database port to the internet.</p>
                     <pre><code class="language-bash"># Create and open the file for editing
 nano /root/docker-deployment/database/docker-compose.yml
 </code></pre>
-                    <p>Paste the following content into the file. Read the comments carefully.</p>
+                    <p>Paste the following content into the file. This is the **standard, secure configuration**.</p>
                     <pre><code class="language-yaml">services:
   # --- The MySQL Database Service ---
   db:
@@ -139,8 +139,6 @@ nano /root/docker-deployment/database/docker-compose.yml
       MYSQL_DATABASE: flask_db
     volumes:
       # CRITICAL: This line persists your database data on the host machine.
-      # The 'mysql-data' folder will be created in the same directory as this file.
-      # NEVER delete this folder unless you want to lose all your data.
       - ./mysql-data:/var/lib/mysql
     networks:
       - nginx-proxy
@@ -177,9 +175,8 @@ cd /root/docker-deployment/database
 # Start the services in detached mode (-d)
 docker compose up -d
 </code></pre>
-                    <p>Docker will now download the MySQL and phpMyAdmin images and start your database stack. A folder named `mysql-data` will appear in your current directory, safely storing your database.</p>
-                    
-                    <p>You can now access the phpMyAdmin login page directly at <code>http://YOUR_SERVER_IP:8082</code>.</p>
+                    <p>Docker will now download the images and start your database stack. A folder named `mysql-data` will appear, safely storing your database.</p>
+                    <p>You can access the phpMyAdmin login page directly at <code>http://YOUR_SERVER_IP:8082</code>.</p>
                 </section>
 
                 <section id="section-3">
@@ -187,7 +184,7 @@ docker compose up -d
                     <p>We will use Nginx Proxy Manager to give phpMyAdmin a secure, easy-to-remember domain name with an SSL certificate.</p>
                     <ol>
                         <li><strong>Point a Subdomain:</strong> In your domain registrar (e.g., Namecheap), create a new 'A' record for a subdomain like <code>dbadmin.yourdomain.com</code> and point it to your server's IP address.</li>
-                        <li><strong>Log in to Nginx Proxy Manager:</strong> Go to <code>http://YOUR_SERVER_IP:81</code>.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
                         <li><strong>Add a New Proxy Host:</strong>
                             <ul>
                                 <li><strong>Details Tab:</strong>
@@ -195,7 +192,7 @@ docker compose up -d
                                         <li><strong>Domain Names:</strong> <code>dbadmin.yourdomain.com</code></li>
                                         <li><strong>Scheme:</strong> <code>http</code></li>
                                         <li><strong>Forward Hostname / IP:</strong> <code>phpmyadmin</code> (This MUST be the service name from your `docker-compose.yml`).</li>
-                                        <li><strong>Forward Port:</strong> <code>80</code> (The default port for the phpMyAdmin container).</li>
+                                        <li><strong>Forward Port:</strong> <code>80</code> (The internal port of the phpMyAdmin container).</li>
                                     </ul>
                                 </li>
                                 <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
@@ -208,34 +205,25 @@ docker compose up -d
                 
                 <section id="section-4">
                     <h2>Part 3: Connecting Your Application</h2>
-                    <p>Now, let's connect your Flask or Django application to this new database.</p>
+                    <p>Now, let's connect your deployed Flask application to this new database.</p>
                     <h3>Step 1: Update Application Dependencies</h3>
-                    <p>Your application needs a database driver. For a Flask app using SQLAlchemy, your <code>requirements.txt</code> should include:</p>
+                    <p>Your application needs a database driver. For a Flask app using `pymysql`, your <code>requirements.txt</code> should include:</p>
                     <pre><code class="language-text"># In your app's requirements.txt
 flask
 gunicorn
-Flask-SQLAlchemy
-PyMySQL
+pymysql
+cryptography # Required for modern MySQL 8 authentication
 </code></pre>
                     
                     <h3>Step 2: Configure the Connection String</h3>
-                    <p>In your Flask `app.py`, configure the SQLAlchemy URI. The key is using the database service name (`db`) as the host.</p>
+                    <p>In your Flask `app.py`, configure the connection details. The key is using the database service name (`db`) as the host, which only works when both containers are on the same Docker network.</p>
                     <pre><code class="language-python"># In your app.py
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-
-app = Flask(__name__)
-
 # --- Database Configuration ---
-db_user = 'flask_user'
-db_password = 'YOUR_STRONG_USER_PASSWORD' # The password you set for the user
-db_name = 'flask_db'
-db_host = 'db' # The service name of the MySQL container
+app.config['MYSQL_HOST'] = 'db' # The service name of the MySQL container
+app.config['MYSQL_USER'] = 'your_app_user'
+app.config['MYSQL_PASSWORD'] = 'your_app_password'
+app.config['MYSQL_DB'] = 'your_app_database'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
 # ... rest of your application code ...
 </code></pre>
 
@@ -247,7 +235,7 @@ cd /root/docker-deployment/apps/your_app_name
 # Rebuild the image and restart the containers
 docker compose up --build -d
 </code></pre>
-                    <p>Your application will now restart and establish a connection to the central database container over the shared `nginx-proxy` network.</p>
+                    <p>Your application will now connect to the central database container over the shared `nginx-proxy` network.</p>
                 </section>
                 
                 <section id="section-5">
@@ -256,9 +244,6 @@ docker compose up --build -d
                     <p>Run these commands from within the <code>/root/docker-deployment/database/</code> directory.</p>
                     <pre><code class="language-bash"># See the logs for the MySQL container (useful for debugging)
 docker compose logs -f db
-
-# See the logs for phpMyAdmin
-docker compose logs -f phpmyadmin
 
 # Stop the database services without deleting data
 docker compose stop
@@ -271,21 +256,19 @@ docker compose down
 </code></pre>
 
                     <h3>Creating New Databases and Users via phpMyAdmin</h3>
-                    <p>For each new application, you should create a dedicated database and user.</p>
+                    <p>For each new application, you should create a dedicated database and user following the Principle of Least Privilege.</p>
                     <ol>
                         <li>Log into phpMyAdmin as the <code>root</code> user.</li>
-                        <li>Click the <strong>"User accounts"</strong> tab.</li>
-                        <li>Click <strong>"Add user account"</strong>.</li>
-                        <li>Fill in a new **User name** (e.g., `django_user`).</li>
-                        <li>Set **Host name** to "Any host" (`%`).</li>
-                        <li>Generate and save a strong **Password**.</li>
-                        <li>Check the box for ✅ <strong>"Create database with same name and grant all privileges."</strong></li>
+                        <li>Go to the **"User accounts"** tab and click **"Add user account"**.</li>
+                        <li>Enter a new **User name** and a strong **Password**.</li>
+                        <li>Under "Database for user account", select the option ✅ **"Grant all privileges on database..."** and choose the specific database you want this user to access.</li>
+                        <li>Ensure the "Global privileges" checkbox at the bottom of the page is **NOT** checked.</li>
                         <li>Click **"Go"** at the bottom.</li>
                     </ol>
-                    <p>You now have a new, isolated database and user ready for your next project.</p>
+                    <p>You now have a new, secure, isolated database user for your project.</p>
 
                     <h3>Backing Up Your Data</h3>
-                    <p>One of the huge advantages of this setup is how easy backups are. All your MySQL data is stored in the <code>/root/docker-deployment/database/mysql-data</code> folder on your host server. To create a backup, you simply need to copy this folder.</p>
+                    <p>All MySQL data is stored in the <code>/root/docker-deployment/database/mysql-data</code> folder. To create a backup, you simply need to copy this folder.</p>
                     <pre><code class="language-bash"># First, stop the database to ensure data consistency
 cd /root/docker-deployment/database
 docker compose stop db
@@ -296,34 +279,79 @@ tar -czvf /root/mysql_backup_$(date +%F).tar.gz /root/docker-deployment/database
 # Restart the database
 docker compose start db
 </code></pre>
-                    <p>You can then download the `mysql_backup_YYYY-MM-DD.tar.gz` file from your `/root` directory using an SFTP client.</p>
+                    <p>You can then download the `mysql_backup_YYYY-MM-DD.tar.gz` file using an SFTP client.</p>
                 </section>
                 
                 <section id="section-6">
                     <h2>Part 5: Allowing External Connections (Advanced)</h2>
-                    <div class="info-box">
-                        <p><strong>⚠️ Security Warning:</strong> Exposing your database to the public internet is a significant security risk. Only do this if you have a specific need and understand the implications. It is always more secure to have your applications connect over the private Docker network.</p>
+                    <div class="info-box" style="border-color: #dc3545;">
+                        <p><strong>⚠️ Security Warning:</strong> Exposing your database to the public internet is a significant security risk. Only do this for temporary needs like local development and ensure you have strong passwords. It is always more secure to have your applications connect over the private Docker network.</p>
                     </div>
-                    <p>If you must allow external connections (e.g., from a desktop client like MySQL Workbench), follow these three steps.</p>
-                    <ol>
-                        <li><strong>Update `docker-compose.yml`:</strong> Add a `ports` mapping to your `db` service.
-                            <pre><code class="language-yaml"># in database/docker-compose.yml
-services:
+                    <p>If you must allow external connections (e.g., from your local PC for development), follow these three steps.</p>
+                    
+                    <h3>Step 1: Update `docker-compose.yml`</h3>
+                    <p>You need to modify your <code>database/docker-compose.yml</code> to map the MySQL port to your host server. Below is the complete file with the required `ports` section added to the `db` service.</p>
+                    <pre><code class="language-yaml">services:
+  # --- The MySQL Database Service ---
   db:
-    # ... image, container_name, etc.
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      # These passwords should be very strong if exposing the DB.
+      MYSQL_ROOT_PASSWORD: YOUR_VERY_STRONG_ROOT_PASSWORD
+      MYSQL_PASSWORD: YOUR_STRONG_USER_PASSWORD
+      MYSQL_USER: flask_user
+      MYSQL_DATABASE: flask_db
     ports:
-      - "3306:3306" # Map host port 3306 to container port 3306
-    # ... rest of config
+      # This line maps your server's public port 3306 to the container's private port 3306.
+      - "3306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      - nginx-proxy
+
+  # --- The phpMyAdmin GUI Service (no changes needed here) ---
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_gui
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+    - "8082:80"
+    depends_on:
+      - db
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external: true
 </code></pre>
-                        </li>
-                        <li><strong>Restart the Service:</strong> Apply the port mapping change.
+                        
+                    <h3>Step 2: Apply the Change and Open Firewall</h3>
+                    <ol>
+                        <li>
+                            <strong>Restart the Service:</strong> Navigate to the database directory and run `up` to apply the port mapping.
                             <pre><code class="language-bash">cd /root/docker-deployment/database
 docker compose up -d
 </code></pre>
                         </li>
-                        <li><strong>Open Firewall Port:</strong> In your VPS provider's firewall settings, create a rule to **ALLOW inbound TCP traffic on port 3306**. You can restrict this to your own IP address for added security.</li>
+                        <li>
+                            <strong>Open Firewall Port:</strong> In your VPS provider's firewall settings, create a rule to **ALLOW inbound TCP traffic on port 3306**. For added security, you can restrict the source to your home or office IP address.
+                        </li>
                     </ol>
-                    <p>You can now connect using your server's public IP as the host.</p>
+                    
+                    <h3>Step 3: Connect from Your Local Application</h3>
+                    <p>You can now configure your local development application to connect using your server's public IP as the host.</p>
+                     <pre><code class="language-python"># In your LOCAL app.py for development
+app.config['MYSQL_HOST'] = 'YOUR_SERVER_IP' # Use the server's public IP
+app.config['MYSQL_USER'] = 'your_app_user'
+app.config['MYSQL_PASSWORD'] = 'your_app_password'
+app.config['MYSQL_DB'] = 'your_app_database'
+</code></pre>
                 </section>
 
 
