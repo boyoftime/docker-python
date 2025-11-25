@@ -378,7 +378,7 @@ CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "app:app"]
 </code></pre>
 
                     <h4>File 7: <code>docker-compose.yml</code> (App-Specific Control File)</h4>
-                    <p>This file is updated to link the new `public` folder into the Nginx container, allowing it to serve the root files.</p>
+                    <p>This file is updated to link the `app.py` file, along with static assets, into the container. This allows you to edit code on the server and simply restart the container to see changes.</p>
                     <pre><code class="language-yaml"># flask_app_1/docker-compose.yml
 services:
   app_one:
@@ -388,8 +388,9 @@ services:
     expose:
       - "8000"
     volumes:
-      # This "live links" the host folders to the container folders.
-      # Changes to these files on the server are reflected instantly inside the container.
+      # This "live links" the host files to the container.
+      # Changes to app.py will take effect after a restart (no rebuild needed).
+      - ./app.py:/app/app.py
       - ./static:/app/static
       - ./templates:/app/templates
     networks:
@@ -483,6 +484,8 @@ services:
     restart: always
     expose: [ "8000" ]
     volumes:
+      # Map app.py so code changes apply on restart
+      - ./app.py:/app/app.py
       - ./static:/app/static
       - ./templates:/app/templates
       # Don't forget to include the public folder if needed for the second app!
@@ -530,8 +533,8 @@ docker compose up --build -d
                 <section id="section-8">
                     <h2>Part 6: Ongoing Management</h2>
                     
-                    <h3>The Two Types of Application Updates</h3>
-                    <p>With this professional setup, there are two distinct workflows for updating your application, depending on what you change.</p>
+                    <h3>The Three Types of Application Updates</h3>
+                    <p>With this professional setup, there are three workflows for updating your application, depending on what you change.</p>
 
                     <h4>Type 1: Updating Static/Public Files or Templates (Instant Update)</h4>
                     <p>This applies when you change files in the <code>static</code>, <code>public</code>, or <code>templates</code> folders.</p>
@@ -540,17 +543,26 @@ docker compose up --build -d
                         <li>Refresh the page in your browser. The changes will appear instantly.</li>
                     </ol>
                     <div class="info-box">
-                       <p><strong>How does this work?</strong> The `volumes` in your `docker-compose.yml` create a live link between the folders on your server and the folders inside the running containers. The containers see your changes in real-time. No restart is needed.</p>
+                       <p><strong>How does this work?</strong> The `volumes` in your `docker-compose.yml` create a live link between the folders on your server and the folders inside the running containers.</p>
                     </div>
 
-                    <h4>Type 2: Updating Python Code or Dependencies (Requires Rebuild)</h4>
-                    <p>This applies when you change your <code>.py</code> files (like `app.py`), your <code>requirements.txt</code>, or the `Dockerfile` itself.</p>
+                    <h4>Type 2: Updating Python Code (Requires Restart)</h4>
+                    <p>This applies when you change your <code>app.py</code> file.</p>
                     <ol>
                         <li>Upload your modified files to the server.</li>
-                        <li>SSH into your server and navigate to the specific application's directory.</li>
+                        <li>SSH into your server and restart the specific container to reload the code.
+                        <pre><code class="language-bash">cd /root/docker-deployment/apps/flask_app_1
+docker compose restart app_one
+</code></pre>
+                        </li>
+                    </ol>
+
+                    <h4>Type 3: Updating Dependencies (Requires Rebuild)</h4>
+                    <p>This applies when you add new libraries to <code>requirements.txt</code> or change the <code>Dockerfile</code>.</p>
+                    <ol>
+                        <li>Upload your modified files to the server.</li>
                         <li>Run the `up` command with the `--build` flag to rebuild the image and restart the service.
-                        <pre><code class="language-bash"># Example for updating the first app's Python code
-cd /root/docker-deployment/apps/flask_app_1
+                        <pre><code class="language-bash">cd /root/docker-deployment/apps/flask_app_1
 docker compose up --build -d
 </code></pre>
                         </li>
