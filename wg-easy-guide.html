@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide: Setting Up a WG-Easy VPN Server with Docker</title>
+    <title>Guide: Setting Up a WG-Easy VPN Server</title>
 
     <!-- Prism JS for Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
@@ -18,6 +18,7 @@
             --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
             --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
             --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+            --error-bg: #f8d7da; --error-border: #f5c6cb; --error-text: #721c24;
         }
         [data-theme="dark"] {
             --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
@@ -25,6 +26,7 @@
             --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
             --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
             --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            --error-bg: #442a2d; --error-border: #8a3b3b; --error-text: #ffb3b3;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
         .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
@@ -45,13 +47,16 @@
         .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
         pre:hover .copy-button { opacity: 1; }
         .copy-button:hover { background-color: #5c6370; }
-        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc, .info-box, .error-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
         .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
         .toc h3 { margin-top: 0; }
         .toc ul { padding-left: 20px; margin: 0; }
         .toc li { margin-bottom: 0.5rem; }
         .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
-        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .info-box p:last-child { margin-bottom: 0; }
+        .error-box { background-color: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
+        .version-choice { border: 2px dashed var(--border-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; }
+        .version-badge { display: inline-block; background: var(--heading-color); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; margin-bottom: 1rem; }
         .theme-switch-wrapper { display: flex; align-items: center; }
         .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
         .theme-switch input { display:none; }
@@ -81,63 +86,70 @@
         <main>
             <div class="content-card">
                 <header style="text-align:center; margin-bottom: 3rem;">
-                    <h1>Setting Up a WG-Easy VPN Server with Docker</h1>
+                    <h1>Setting Up a WG-Easy VPN Server</h1>
                     <p>A Simple, Secure VPN with a Web-Based Management UI</p>
                 </header>
 
                 <nav class="toc">
                     <h3>Table of Contents</h3>
                     <ul>
-                        <li><a href="#section-1">Part 1: Setting Up WG-Easy with Docker</a></li>
+                        <li><a href="#section-1">Part 1: Setting Up WG-Easy (Choose Version)</a></li>
                         <li><a href="#section-2">Part 2: Using the Web UI</a></li>
                         <li><a href="#section-3">Part 3: Customizing Client Configurations</a></li>
-                        <li><a href="#section-4">Part 4: Ongoing Management (Updating & Uninstalling)</a></li>
+                        <li><a href="#section-4">Part 4: Ongoing Management</a></li>
                         <li><a href="#section-5">Part 5: Securing the UI with Nginx Proxy Manager</a></li>
                     </ul>
                 </nav>
 
                 <section id="section-1">
                     <h2>Part 1: Setting Up WG-Easy with Docker</h2>
-                    <p>WG-Easy is a fantastic self-hosted WireGuard VPN server that includes a simple web interface for creating and managing users, making it perfect for our setup.</p>
+                    <p>WG-Easy is a fantastic self-hosted WireGuard VPN server. There are two common versions available. <strong>Please choose ONE of the options below.</strong></p>
                     
                     <h3>Step 1: Create the Project Directory</h3>
-                    <pre><code class="language-bash"># Create a dedicated directory for the WG-Easy service
+                    <p>Regardless of which version you choose, start by creating a folder:</p>
+                    <pre><code class="language-bash"># Create a dedicated directory
 mkdir /root/docker-deployment/wg-easy
+cd /root/docker-deployment/wg-easy
 </code></pre>
 
                     <h3>Step 2: Create the `docker-compose.yml` File</h3>
-                    <pre><code class="language-bash">nano /root/docker-deployment/wg-easy/docker-compose.yml
+                    <p>Create the file:</p>
+                    <pre><code class="language-bash">nano docker-compose.yml
 </code></pre>
-                    <p>Paste the following configuration. This file connects WG-Easy to the shared network, allowing the web UI to be secured. Be sure to edit the two required variables.</p>
-                    <pre><code class="language-yaml">services:
+                    <p><strong>Now, copy the code from ONE of the options below:</strong></p>
+
+                    <!-- OPTION A -->
+                    <div class="version-choice">
+                        <span class="version-badge">OPTION A: LATEST VERSION (v15+) - RECOMMENDED</span>
+                        <p>This config uses the new <code>SERVER_PUBLIC_URL</code> variables. Data is stored <strong>locally in this folder</strong>.</p>
+                        <pre><code class="language-yaml">services:
   wg-easy:
-    image: weejewel/wg-easy:latest
+    # Uses the new official image repository
+    image: ghcr.io/wg-easy/wg-easy:15
     container_name: wg-easy
     environment:
-      # --- REQUIRED VARIABLES (EDIT THESE) ---
-
-      # 1. Set the public IP address or a dedicated domain for the VPN connection.
-      # This is used to generate correct client config files.
-      - WG_HOST=YOUR_SERVER_IP
-
-      # 2. Set the password you will use to log in to the web UI.
-      # Change this to something strong and secret!
-      - PASSWORD=YOUR_STRONG_PASSWORD
-
-      # --- OPTIONAL VARIABLES (defaults are usually fine) ---
-
-      # The port WireGuard listens on for VPN traffic.
+      # --- REQUIRED VARIABLES (New Format) ---
+      # 1. Public IP or Domain
+      - SERVER_PUBLIC_URL=https://YOUR_IP_OR_DOMAIN
+      
+      # 2. Web UI Password
+      - ADMIN_PASSWORD=YOUR_STRONG_PASSWORD
+      
+      # --- CONFIGURATION ---
+      - PORT=51821
       - WG_PORT=51820
-
-      # The default DNS servers pushed to clients.
-      # Cloudflare is a great default. See a list of alternatives below.
-      - WG_DEFAULT_DNS=1.1.1.1,1.0.0.1
+      - DNS=1.1.1.1,1.0.0.1
+      
     volumes:
-      # This maps the configuration directory to the host for persistence.
+      # Stores config files IN THIS DIRECTORY (as requested)
       - .:/etc/wireguard
+      # Required for v15+ networking
+      - /lib/modules:/lib/modules:ro
+
     ports:
-      - "51820:51820/udp" # WireGuard VPN Port
+      - "51820:51820/udp" # VPN Port
       - "51821:51821/tcp" # Web UI Port
+
     restart: unless-stopped
     cap_add:
       - NET_ADMIN
@@ -145,18 +157,73 @@ mkdir /root/docker-deployment/wg-easy
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv4.ip_forward=1
-    # Connect the container to our shared proxy network.
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.default.forwarding=1
+
     networks:
       - nginx-proxy
 
-# Declare that our shared network is external and pre-existing.
 networks:
   nginx-proxy:
     external: true
 </code></pre>
-                    <div class="info-box"><p><strong>Firewall Note:</strong> Before starting, ensure your VPS provider's firewall allows incoming traffic on port <strong>51821/TCP</strong> (for the web UI) and port <strong>51820/UDP</strong> (for the VPN connection).</p></div>
+                    </div>
+
+                    <!-- OPTION B -->
+                    <div class="version-choice">
+                        <span class="version-badge" style="background-color: #6c757d;">OPTION B: LEGACY VERSION (WeeJewel)</span>
+                        <p>Use this if you prefer the legacy setup (old variable names).</p>
+                        <pre><code class="language-yaml">services:
+  wg-easy:
+    # Uses the original legacy image
+    image: weejewel/wg-easy:latest
+    container_name: wg-easy
+    environment:
+      # --- REQUIRED VARIABLES ---
+      - WG_HOST=YOUR_SERVER_IP
+      - PASSWORD=YOUR_STRONG_PASSWORD
+      
+      # --- CONFIGURATION ---
+      - WG_PORT=51820
+      - WG_DEFAULT_DNS=1.1.1.1,1.0.0.1
+
+    volumes:
+      # Stores config files in the same directory as this docker-compose file
+      - .:/etc/wireguard
+
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external: true
+</code></pre>
+                    </div>
 
                     <h3>Step 3: Launch WG-Easy</h3>
+                    
+                    <div class="error-box">
+                        <p><strong>⚠️ If you get a "Migration" Error (e.g. "invalid Configuration"):</strong></p>
+                        <p>If you see an error in the logs about migration, it means you have an old incompatible configuration file in this folder.</p>
+                        <p><strong>To fix this, you must delete the old file to start fresh:</strong></p>
+                        <pre><code class="language-bash">rm /root/docker-deployment/wg-easy/config.json
+rm /root/docker-deployment/wg-easy/wg0.json</code></pre>
+                    </div>
+
+                    <p>Start the server normally:</p>
                     <pre><code class="language-bash">cd /root/docker-deployment/wg-easy
 docker compose up -d
 </code></pre>
@@ -166,13 +233,12 @@ docker compose up -d
                     <h2>Part 2: Using the Web UI</h2>
                     <ol>
                         <li>Access the UI by navigating to <code>http://YOUR_SERVER_IP:51821</code> in your browser.</li>
-                        <li>Log in with the password you set in the `PASSWORD` variable.</li>
+                        <li>Log in with the password you set in the config file.</li>
                         <li>Click the **"+ New Client"** button to create your first VPN user.</li>
-                        <li>A new row will appear. You can click the client's name to rename it (e.g., `my-laptop`).</li>
                         <li>To connect a device, use one of the icons:
                             <ul>
                                 <li><strong>QR Code Icon:</strong> Best for mobile phones. Scan it with the WireGuard app.</li>
-                                <li><strong>Download Icon:</strong> Best for computers. This saves a <code>.conf</code> file that you can import into your computer's WireGuard app.</li>
+                                <li><strong>Download Icon:</strong> Best for computers. This saves a <code>.conf</code> file.</li>
                             </ul>
                         </li>
                     </ol>
@@ -180,124 +246,55 @@ docker compose up -d
                 
                 <section id="section-3">
                     <h2>Part 3: Customizing Client Configurations</h2>
-                    <p>While WG-Easy sets great defaults, you can manually edit the downloaded <code>.conf</code> file in a text editor for advanced customization.</p>
-
-                    <h3>Example <code>.conf</code> File</h3>
-                    <pre><code class="language-ini">[Interface]
-PrivateKey = [REDACTED - DO NOT CHANGE OR SHARE]
-Address = 10.8.0.2/24
-DNS = 1.1.1.1,1.0.0.1
-
-[Peer]
-PublicKey = [REDACTED - DO NOT CHANGE]
-PresharedKey = [REDACTED - DO NOT CHANGE]
-AllowedIPs = 0.0.0.0/0, ::/0
-PersistentKeepalive = 0
-Endpoint = YOUR_SERVER_IP:51820
-</code></pre>
-                    
-                    <h3>What You Can (and Can't) Change</h3>
-                    <ul>
-                        <li><p><strong>NEVER Change:</strong> The `PrivateKey`, `PublicKey`, and `PresharedKey` values. These are the cryptographic keys that secure your connection.</p></li>
-                        <li><p><strong>DNS:</strong> Change this to use a different DNS provider. This is the most common customization.</p></li>
-                        
-                        <li><p><strong>Endpoint:</strong> Change this if your server's IP changes. For a more professional setup, you can use a direct domain name (e.g., `wg.yourdomain.com:51820`). See the important note below.</p></li>
-                    </ul>
+                    <p>You can manually edit the downloaded <code>.conf</code> file in a text editor for advanced customization.</p>
 
                     <div class="info-box">
                         <p><strong>Important: Setting the Correct VPN Endpoint</strong></p>
                         <p>
-                            The <code>Endpoint = ...</code> line in your client config files is automatically generated from the <strong><code>WG_HOST</code></strong> variable in your <code>docker-compose.yml</code>.
+                            The <code>Endpoint = ...</code> line in your client config files is automatically generated from the <strong><code>SERVER_PUBLIC_URL</code></strong> (or <code>WG_HOST</code>) variable.
                         </p>
                         <p>
-                            Crucially, the domain you use for the Web UI (via Nginx Proxy Manager) <strong>CANNOT</strong> be used for <code>WG_HOST</code>. This is because NPM handles web traffic (TCP), while the VPN requires a direct connection (UDP).
+                            The domain you use for the Web UI (via Nginx Proxy Manager) <strong>CANNOT</strong> be used for the VPN endpoint unless you open UDP ports on that specific domain.
                         </p>
-                        <p><strong>What to put for the <code>WG_HOST</code> variable in your <code>docker-compose.yml</code>:</strong></p>
+                        <p><strong>Your Public URL variable should be:</strong></p>
                         <ul>
-                            <li><strong>Option A (Simple):</strong> Use your server's direct IP address.
-                                <br><code>- WG_HOST=YOUR_SERVER_IP</code>
-                            </li>
-                            <li><strong>Option B (Recommended):</strong> Create a <strong>separate</strong> DNS 'A' record (e.g., <code>wg.yourdomain.com</code>) that points directly to your server's IP. <strong>Do not</strong> add this domain to Nginx Proxy Manager.
-                                <br><code>- WG_HOST=wg.yourdomain.com</code>
-                            </li>
-                        </ul>
-                         <p style="margin-top: 1rem; margin-bottom: 0;">If you change this later, update your <code>docker-compose.yml</code>, run <code>docker compose up -d</code> from that directory, and re-download your client configs.</p>
-                    </div>
-
-                        <li><p><strong>AllowedIPs:</strong> Change this for "split-tunneling". The default `0.0.0.0/0, ::/0` sends all traffic through the VPN. Changing it to `10.8.0.0/24` would only send traffic destined for your internal VPN network through the tunnel.</p></li>
-                    </ul>
-
-                    <h3>Recommended DNS Providers</h3>
-                    <div class="info-box">
-                        <p>Here are some excellent public DNS providers you can use in the `DNS = ` line of your config file (or as the default in your `docker-compose.yml`).</p>
-                        <ul>
-                            <li><strong>General Purpose (Fast & Reliable):</strong>
-                                <ul>
-                                    <li>Cloudflare: `1.1.1.1, 1.0.0.1`</li>
-                                    <li>Google: `8.8.8.8, 8.8.4.4`</li>
-                                </ul>
-                            </li>
-                            <li><strong>Security-Focused (Blocks Malicious Domains):</strong>
-                                <ul>
-                                    <li>Quad9: `9.9.9.9, 149.112.112.112`</li>
-                                    <li>Cloudflare Security: `1.1.1.2, 1.0.0.2`</li>
-                                </ul>
-                            </li>
-                            <li><strong>Ad-Blocking:</strong>
-                                <ul>
-                                    <li>AdGuard DNS: `94.140.14.14, 94.140.15.15`</li>
-                                </ul>
-                            </li>
+                            <li><strong>Option 1:</strong> Your server's IP address (e.g., <code>https://123.45.67.89</code>).</li>
+                            <li><strong>Option 2:</strong> A separate DNS 'A' record (e.g., <code>https://wg.yourdomain.com</code>) pointing directly to the IP.</li>
                         </ul>
                     </div>
                 </section>
                 
                 <section id="section-4">
-                    <h2>Part 4: Ongoing Management (Updating & Uninstalling)</h2>
+                    <h2>Part 4: Ongoing Management</h2>
                     
-                    <h3>Updating WG-Easy</h3>
-                    <p>To update to the latest version, follow the standard Docker Compose workflow:</p>
-                    <pre><code class="language-bash"># Navigate to the WG-Easy directory
-cd /root/docker-deployment/wg-easy
-
-# Pull the latest image from the registry
+                    <h3>Updating</h3>
+                    <pre><code class="language-bash">cd /root/docker-deployment/wg-easy
 docker compose pull
-
-# Recreate the container with the new image
 docker compose up -d
 </code></pre>
 
-                    <h3>Uninstalling WG-Easy</h3>
-                    <p>To completely remove WG-Easy from your server:</p>
-                    <pre><code class="language-bash"># 1. Navigate to the WG-Easy directory
-cd /root/docker-deployment/wg-easy
-
-# 2. Stop the container and remove its data volume
-docker compose down -v
-
-# 3. Go up one directory
+                    <h3>Uninstalling</h3>
+                    <pre><code class="language-bash">cd /root/docker-deployment/wg-easy
+docker compose down
 cd ..
-
-# 4. Be careful! This deletes the project folder permanently.
 rm -rf wg-easy
 </code></pre>
                 </section>
 
                 <section id="section-5">
                     <h2>Part 5: Securing the UI with Nginx Proxy Manager</h2>
-                    <p>It's highly recommended to put your WG-Easy admin panel behind a secure domain. The process is simple with the Nginx Proxy Manager you already have set up.</p>
+                    <p>Secure the admin panel (TCP port 51821) using SSL.</p>
                     <ol>
                         <li><strong>Point a subdomain</strong> (e.g., `vpn.yourdomain.com`) to your server's IP.</li>
                         <li>In Nginx Proxy Manager, add a new Proxy Host.</li>
                         <li><strong>Details Tab:</strong>
                             <ul>
                                 <li>Domain Names: `vpn.yourdomain.com`</li>
-                                <li>Forward Hostname / IP: `wg-easy` (Docker's internal DNS will resolve this).</li>
+                                <li>Forward Hostname / IP: `wg-easy`</li>
                                 <li>Forward Port: `51821`</li>
                             </ul>
                         </li>
                         <li><strong>SSL Tab:</strong> Request a new SSL certificate and turn on "Force SSL".</li>
-                        <li>Save and you're done! You can now access your panel securely at <code>https://vpn.yourdomain.com</code>.</li>
                     </ol>
                 </section>
             </div>
