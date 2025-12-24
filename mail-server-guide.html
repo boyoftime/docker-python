@@ -123,12 +123,16 @@ cd /root/docker-deployment/mail
                     <p>Create the file:</p>
                     <pre><code class="language-bash">nano docker-compose.yml
 </code></pre>
-                    <p>Paste the configuration below. This maps the essential email ports directly to your host, but keeps the Web UI (8080) internally accessible so you can proxy it later.</p>
+                    <p>Paste the configuration below. <strong>IMPORTANT: Change 'password' to your own strong password.</strong></p>
                     <pre><code class="language-yaml">services:
   stalwart:
     image: stalwartlabs/stalwart:latest
     container_name: stalwart
     restart: unless-stopped
+    environment:
+      # FORCE the admin password.
+      # CHANGE 'password' TO YOUR OWN STRONG PASSWORD!
+      - STALWART_AUTHENTICATION__FALLBACK_ADMIN__SECRET="your_password_here"
     ports:
       # SMTP (Receive Mail)
       - "25:25"
@@ -174,33 +178,29 @@ docker compose up -d
 
                 <section id="section-3">
                     <h2>Part 2: Initial Login</h2>
-                    <p>Stalwart generates a random administrator password on the first run. You need to view the logs to find it.</p>
-                    <pre><code class="language-bash"># View the logs
-docker logs stalwart
-</code></pre>
-                    <p>Look for a line that looks like this:</p>
-                    <pre><code class="language-text">🔑 Your administrator account is 'admin' with password 'w95Yuiu36E'.</code></pre>
-                    <p>Copy this password immediately.</p>
+                    <p>Unlike the default installation, you do not need to check logs. You defined your password in the configuration file above.</p>
+                    <p><strong>URL:</strong> <code>http://YOUR_SERVER_IP:8080</code></p>
+                    <p><strong>Username:</strong> <code>admin</code></p>
+                    <p><strong>Password:</strong> The value you set for <code>STALWART_AUTHENTICATION__FALLBACK_ADMIN__SECRET</code> (e.g., <code>your_password</code>).</p>
                 </section>
                 
                 <section id="section-4">
                     <h2>Part 3: Setup & Creating a Real User</h2>
-                    <p>You can now access the installation wizard. <strong>It is crucial to follow the "Create Account" step below to avoid login issues later.</strong></p>
-                    <p><strong>URL:</strong> <code>http://YOUR_SERVER_IP:8080</code></p>
+                    <p>Once logged in, follow the setup wizard.</p>
                     
                     <div class="info-box">
                         <p><strong>Next Steps inside the UI:</strong></p>
                         <ol>
-                            <li>Log in with the <code>admin</code> username and the password from the logs.</li>
                             <li>Go to <strong>Settings > Server > Network</strong> to set your hostname.</li>
                             <li>Go to <strong>Management > Directory > Domains</strong> to add your domain (e.g., <code>kingscapitaltz.com</code>).</li>
+                            <li>The interface will then show you the exact <strong>DNS Records</strong> (MX, SPF, DKIM) you need to add to your Domain Registrar.</li>
                             <li>
                                 <strong style="color: #d63384;">CRITICAL: Create a Real Admin Account</strong><br>
-                                The default <code>admin</code> is a "fallback" account, and password changes to it don't always persist.
+                                Even though we set the password in the file, it is best practice to create a database-backed user for day-to-day management.
                                 <ul>
                                     <li>Go to <strong>Management > Directory > Accounts</strong>.</li>
                                     <li>Click <strong>Create Account</strong>.</li>
-                                    <li>Create a new user (e.g., <code>superuser</code>) with your desired password.</li>
+                                    <li>Create a new user (e.g., <code>superuser</code>) with a strong password.</li>
                                     <li><strong>Important:</strong> Enable the <strong>"Superuser"</strong> or <strong>"Administrator"</strong> role for this user.</li>
                                     <li>Log out and log back in with your new user.</li>
                                 </ul>
