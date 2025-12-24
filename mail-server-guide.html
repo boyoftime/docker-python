@@ -91,7 +91,8 @@
                         <li><a href="#section-1">Prerequisites & Ports</a></li>
                         <li><a href="#section-2">Part 1: Installation with Docker</a></li>
                         <li><a href="#section-3">Part 2: Initial Login</a></li>
-                        <li><a href="#section-4">Part 3: Accessing the Web Interface</a></li>
+                        <li><a href="#section-4">Part 3: Setup & Creating a Real User</a></li>
+                        <li><a href="#section-5">Part 4: Securing with Nginx Proxy Manager</a></li>
                     </ul>
                 </nav>
 
@@ -122,7 +123,7 @@ cd /root/docker-deployment/mail
                     <p>Create the file:</p>
                     <pre><code class="language-bash">nano docker-compose.yml
 </code></pre>
-                    <p>Paste the configuration below. This maps the essential email ports directly to your host, but keeps the Web UI (8080) internally accessible so you can proxy it later if you wish, or access it via IP.</p>
+                    <p>Paste the configuration below. This maps the essential email ports directly to your host, but keeps the Web UI (8080) internally accessible so you can proxy it later.</p>
                     <pre><code class="language-yaml">services:
   stalwart:
     image: stalwartlabs/stalwart:latest
@@ -183,8 +184,8 @@ docker logs stalwart
                 </section>
                 
                 <section id="section-4">
-                    <h2>Part 3: Accessing the Web Interface</h2>
-                    <p>You can now access the installation wizard.</p>
+                    <h2>Part 3: Setup & Creating a Real User</h2>
+                    <p>You can now access the installation wizard. <strong>It is crucial to follow the "Create Account" step below to avoid login issues later.</strong></p>
                     <p><strong>URL:</strong> <code>http://YOUR_SERVER_IP:8080</code></p>
                     
                     <div class="info-box">
@@ -193,9 +194,44 @@ docker logs stalwart
                             <li>Log in with the <code>admin</code> username and the password from the logs.</li>
                             <li>Go to <strong>Settings > Server > Network</strong> to set your hostname.</li>
                             <li>Go to <strong>Management > Directory > Domains</strong> to add your domain (e.g., <code>kingscapitaltz.com</code>).</li>
-                            <li>The interface will then show you the exact <strong>DNS Records</strong> (MX, SPF, DKIM) you need to add to Namecheap.</li>
+                            <li>
+                                <strong style="color: #d63384;">CRITICAL: Create a Real Admin Account</strong><br>
+                                The default <code>admin</code> is a "fallback" account, and password changes to it don't always persist.
+                                <ul>
+                                    <li>Go to <strong>Management > Directory > Accounts</strong>.</li>
+                                    <li>Click <strong>Create Account</strong>.</li>
+                                    <li>Create a new user (e.g., <code>superuser</code>) with your desired password.</li>
+                                    <li><strong>Important:</strong> Enable the <strong>"Superuser"</strong> or <strong>"Administrator"</strong> role for this user.</li>
+                                    <li>Log out and log back in with your new user.</li>
+                                </ul>
+                            </li>
                         </ol>
                     </div>
+                </section>
+
+                <section id="section-5">
+                    <h2>Part 4: Securing the Web Admin with Nginx Proxy Manager</h2>
+                    <p>Accessing the admin panel via IP is not recommended for production. Let's secure it with a domain name and SSL.</p>
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create a new 'A' record (e.g., <code>mail.yourdomain.com</code>) pointing to your server's IP.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
+                        <li><strong>Add a New Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Details Tab:</strong>
+                                    <ul>
+                                        <li><strong>Domain Names:</strong> <code>mail.yourdomain.com</code></li>
+                                        <li><strong>Scheme:</strong> <code>http</code></li>
+                                        <li><strong>Forward Hostname / IP:</strong> <code>stalwart</code> (This matches the container name defined in docker-compose).</li>
+                                        <li><strong>Forward Port:</strong> <code>8080</code> (The internal web port).</li>
+                                        <li>Turn on <strong>"Websockets Support"</strong> (Recommended for the live admin UI).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
+                                <li><strong>Save.</strong></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p>You can now access your secure mail server admin panel at <code>https://mail.yourdomain.com</code>.</p>
                 </section>
             </div>
         </main>
