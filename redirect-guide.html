@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up WWW Redirection with SSL</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Infrastructure Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Redirecting WWW to Non-WWW (The Right Way)</h1>
+                    <p>Handling URL Redirection with SSL Support in Nginx Proxy Manager</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">Why Not Use CNAMEs or DNS Forwarding?</a></li>
+                        <li><a href="#section-2">The Solution: "Redirection Hosts"</a></li>
+                        <li><a href="#section-3">Step 1: The DNS Setup</a></li>
+                        <li><a href="#section-4">Step 2: Nginx Proxy Manager Setup</a></li>
+                        <li><a href="#section-5">Verification</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>Why Not Use CNAMEs or DNS Forwarding?</h2>
+                    <p>When you want <code>www.kingscapitaltz.com</code> to go to <code>kingscapitaltz.com</code>, beginners often make two common mistakes:</p>
+                    
+                    <h3>Mistake 1: Relying on CNAMEs</h3>
+                    <p>A <strong>CNAME Record</strong> only tells the DNS system: "If someone asks for <em>www</em>, send them to the same IP address as the main domain."</p>
+                    <p>It <strong>does not</strong> change the URL in the browser bar. The user will still see <code>www.kingscapitaltz.com</code> in their address bar, which splits your SEO ranking and analytics between two different sites.</p>
+
+                    <h3>Mistake 2: Using Registrar "URL Redirects" (without SSL)</h3>
+                    <p>Most registrars (like Namecheap) offer a "URL Redirect" record type. While this works for HTTP, it often breaks **HTTPS**. </p>
+                    <p>If a user types <code>https://www...</code>, the registrar's redirect server (which doesn't have your SSL certificate) will fail to handshake, and the user will see a scary <strong>"Your connection is not private"</strong> warning before the redirect even happens.</p>
+                </section>
+                
+                <section id="section-2">
+                    <h2>The Solution: "Redirection Hosts"</h2>
+                    <p>The professional way to handle this is to point both the <code>@</code> (root) and <code>www</code> records to your server, and let Nginx Proxy Manager handle the logic.</p>
+                    <p>By doing this on your own server:</p>
+                    <ul>
+                        <li>You can generate **SSL Certificates** for both `www` and `non-www`.</li>
+                        <li>The redirect happens securely over HTTPS (no warning screens).</li>
+                        <li>You can preserve the path (e.g., `www.site.com/login` redirects correctly to `site.com/login`).</li>
+                    </ul>
+                </section>
+
+                <section id="section-3">
+                    <h2>Step 1: The DNS Setup</h2>
+                    <p>Before configuring the proxy, ensure your DNS is pointing the traffic to your server.</p>
+                    <ol>
+                        <li>Log into your Domain Registrar (Namecheap).</li>
+                        <li><strong>Delete</strong> any existing CNAME record for `www`.</li>
+                        <li><strong>Add</strong> a new **A Record**:
+                            <ul>
+                                <li><strong>Host:</strong> <code>www</code></li>
+                                <li><strong>Value:</strong> <code>YOUR_SERVER_IP</code> (e.g., 173.212.208.45)</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div class="info-box">
+                        <p><strong>Wait!</strong> DNS changes can take a few minutes to propagate. If Nginx Proxy Manager gives an error when saving in the next step, wait 5 minutes and try again.</p>
+                    </div>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Step 2: Nginx Proxy Manager Setup</h2>
+                    <p>Now we tell your server to catch the `www` traffic and bounce it to the main domain.</p>
+
+                    <h3>1. Open Redirection Hosts</h3>
+                    <p>In Nginx Proxy Manager, click on <strong>Hosts</strong> in the top menu, then select <strong>Redirection Hosts</strong>.</p>
+                    <p>Click <strong>Add Redirection Host</strong>.</p>
+
+                    <h3>2. The Details Tab</h3>
+                    <p>Fill out the form exactly as follows:</p>
+                    <ul>
+                        <li><strong>Domain Names:</strong> <code>www.kingscapitaltz.com</code> (Press Enter)</li>
+                        <li><strong>Scheme:</strong> <code>https</code></li>
+                        <li><strong>Forward Domain:</strong> <code>kingscapitaltz.com</code></li>
+                        <li><strong>Forward Port:</strong> <code>443</code> (Standard HTTPS port)</li>
+                        <li><strong>HTTP Code:</strong> <code>301 Moved permanently</code> (Best for SEO)</li>
+                        <li><strong>Preserve Path:</strong> <strong style="color: #28a745;">ENABLED</strong> (Switch On)</li>
+                        <li><strong>Block Common Exploits:</strong> <strong style="color: #28a745;">ENABLED</strong></li>
+                    </ul>
+
+                    <h3>3. The SSL Tab</h3>
+                    <p>We must generate a certificate for the `www` subdomain so the redirect is secure.</p>
+                    <ul>
+                        <li><strong>SSL Certificate:</strong> Select "Request a new SSL Certificate".</li>
+                        <li><strong>Force SSL:</strong> <strong style="color: #28a745;">ENABLED</strong></li>
+                        <li><strong>Email Address:</strong> Ensure your email is present.</li>
+                        <li><strong>Agree to Terms:</strong> <strong style="color: #28a745;">ENABLED</strong></li>
+                    </ul>
+
+                    <p>Click <strong>Save</strong>.</p>
+                </section>
+
+                <section id="section-5">
+                    <h2>Verification</h2>
+                    <p>To test this properly, open a "Private" or "Incognito" window in your browser (to avoid caching issues).</p>
+                    <ol>
+                        <li>Type <code>http://www.kingscapitaltz.com</code> -> Should redirect to <code>https://kingscapitaltz.com</code></li>
+                        <li>Type <code>https://www.kingscapitaltz.com</code> -> Should redirect to <code>https://kingscapitaltz.com</code></li>
+                        <li>Type <code>https://www.kingscapitaltz.com/some-page</code> -> Should redirect to <code>https://kingscapitaltz.com/some-page</code></li>
+                    </ol>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>
