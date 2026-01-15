@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide: Setting Up Stirling-PDF</title>
+    <title>Guide: Setting Up Stirling-PDF (Official)</title>
 
     <!-- Prism JS for Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
@@ -59,6 +60,13 @@
         input:checked + .slider:before { transform: translateX(24px); }
         .slider.round { border-radius: 24px; }
         .slider.round:before { border-radius: 50%; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; font-size: 1rem; }
+        th, td { padding: 12px 15px; border: 1px solid var(--border-color); text-align: left; }
+        th { background-color: var(--toc-bg); color: var(--heading-color); font-weight: bold; }
+        tr:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        [data-theme="dark"] tr:nth-child(even) { background-color: rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
@@ -79,57 +87,88 @@
         <main>
             <div class="content-card">
                 <header style="text-align:center; margin-bottom: 3rem;">
-                    <h1>Setting Up Stirling-PDF</h1>
+                    <h1>Setting Up Stirling-PDF (Official)</h1>
                     <p>A Powerful, Private, and Web-Based PDF Manipulation Tool</p>
                 </header>
 
                 <nav class="toc">
                     <h3>Table of Contents</h3>
                     <ul>
-                        <li><a href="#section-1">What is Stirling-PDF?</a></li>
-                        <li><a href="#section-2">Part 1: Installing with Docker</a></li>
-                        <li><a href="#section-3">Part 2: Securing with Nginx Proxy Manager</a></li>
-                        <li><a href="#section-4">Part 4: Management & Cleanup</a></li>
+                        <li><a href="#section-1">Why Stirling-PDF?</a></li>
+                        <li><a href="#section-2">Choosing Your Version</a></li>
+                        <li><a href="#section-3">Part 1: Standard Installation (Recommended)</a></li>
+                        <li><a href="#section-4">Part 2: Securing with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-5">Part 3: Advanced Split Deployment</a></li>
+                        <li><a href="#section-6">Part 4: Management & Cleanup</a></li>
                     </ul>
                 </nav>
 
                 <section id="section-1">
-                    <h2>What is Stirling-PDF?</h2>
+                    <h2>Why Stirling-PDF?</h2>
                     <p>Stirling-PDF allows you to perform almost any operation on PDF files directly from your browser. Stop uploading your private documents to random "Free Online PDF Merger" websites.</p>
                     <p><strong>Features Include:</strong> Splitting, Merging, Rotating, converting PDFs to Images (and vice versa), Password protection, OCR (Optical Character Recognition), and much more.</p>
                 </section>
-                
+
                 <section id="section-2">
-                    <h2>Part 1: Installing with Docker</h2>
-                    <p>We will set up Stirling-PDF in its own dedicated directory.</p>
+                    <h2>Choosing Your Version</h2>
+                    <p>The official Stirling-PDF image comes in three flavors. For most users, <code>latest</code> is the best choice.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Version Tag</th>
+                                <th>Description</th>
+                                <th>Best For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>latest</code></td>
+                                <td><strong>Standard.</strong> Includes all standard PDF features.</td>
+                                <td>Most users. Balanced features & size.</td>
+                            </tr>
+                            <tr>
+                                <td><code>latest-fat</code></td>
+                                <td><strong>Full.</strong> Everything + extra tools & conversion formats.</td>
+                                <td>Power users who need every possible format. Large download.</td>
+                            </tr>
+                            <tr>
+                                <td><code>latest-ultra-lite</code></td>
+                                <td><strong>Lite.</strong> Core features only.</td>
+                                <td>Low-end VPS or Raspberry Pi. Fastest startup.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <section id="section-3">
+                    <h2>Part 1: Standard Installation (Recommended)</h2>
+                    <p>We will set up the Standard version with full persistent data.</p>
 
                     <h3>Step 1: Create the Project Directory</h3>
                     <pre><code class="language-bash"># Create a directory for the service
-mkdir /root/docker-deployment/stirling-pdf
+mkdir -p /root/docker-deployment/stirling-pdf
 cd /root/docker-deployment/stirling-pdf
 </code></pre>
 
                     <h3>Step 2: Create the `docker-compose.yml` File</h3>
                     <pre><code class="language-bash">nano docker-compose.yml
 </code></pre>
-                    <p>Paste the following configuration. We map the internal port 8080 to host port 8085 for testing.</p>
+                    <p>Paste the following configuration.</p>
                     <pre><code class="language-yaml">services:
   stirling-pdf:
-    image: frooodle/s-pdf:latest
+    image: stirlingtools/stirling-pdf:latest
     container_name: stirling-pdf
     restart: unless-stopped
     ports:
       # Maps host port 8085 to container port 8080
       - '8085:8080'
     volumes:
-      # Optional: Persist OCR training data and configs
-      - ./trainingData:/usr/share/tesseract-ocr/4.00/tessdata
-      - ./extraConfigs:/configs
-      - ./logs:/logs
+      - ./stirling-data/tessdata:/usr/share/tessdata  # OCR language files
+      - ./stirling-data/configs:/configs               # Settings & database
+      - ./stirling-data/logs:/logs                     # Application logs
+      - ./stirling-data/pipeline:/pipeline             # Automation configs
     environment:
-      # ENABLE SECURITY: Required to change admin settings
-      - DOCKER_ENABLE_SECURITY=true
-      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - SECURITY_ENABLELOGIN=true  # Enable login (Recommended)
       - LANGS=en_US
     networks:
       - nginx-proxy
@@ -140,8 +179,14 @@ networks:
     external: true
 </code></pre>
 
-                    <h3>Step 3: Launch the Service</h3>
-                    <pre><code class="language-bash">docker compose up -d
+                    <h3>Step 3: Fix Permissions and Launch</h3>
+                    <p>Since we are using volumes, we must ensure the folders exist with the correct permissions before starting.</p>
+                    <pre><code class="language-bash"># Create folder and set permissions
+mkdir stirling-data
+chmod -R 755 stirling-data
+
+# Start the service
+docker compose up -d
 </code></pre>
                     <div class="info-box">
                         <p><strong>Default Credentials:</strong><br>
@@ -151,90 +196,93 @@ networks:
                     </div>
                 </section>
 
-                <section id="section-3">
+                <section id="section-4">
                     <h2>Part 2: Securing with Nginx Proxy Manager</h2>
-                    <p>To access this securely via a domain name (e.g., `pdf.yourdomain.com`) and HTTPS.</p>
+                    <p>To access this securely via a domain name (e.g., `pdf.yourdomain.com`).</p>
                     <ol>
-                        <li><strong>Point a Subdomain:</strong> In your domain registrar, create an 'A' record for your chosen subdomain pointing to your server's IP.</li>
+                        <li><strong>Point a Subdomain:</strong> Create an 'A' record for your subdomain pointing to your server's IP.</li>
                         <li><strong>Log in to Nginx Proxy Manager.</strong></li>
                         <li><strong>Add a New Proxy Host:</strong>
                             <ul>
-                                <li><strong>Details Tab:</strong>
-                                    <ul>
-                                        <li><strong>Domain Names:</strong> <code>pdf.yourdomain.com</code></li>
-                                        <li><strong>Scheme:</strong> <code>http</code></li>
-                                        <li><strong>Forward Hostname / IP:</strong> <code>stirling-pdf</code> (Matches the container name).</li>
-                                        <li><strong>Forward Port:</strong> <code>8080</code> (The internal container port).</li>
-                                    </ul>
-                                </li>
-                                <li><strong>SSL Tab:</strong> Select "Request a new SSL Certificate" and turn on "Force SSL".</li>
-                                <li><strong>Save.</strong></li>
+                                <li><strong>Domain Names:</strong> <code>pdf.yourdomain.com</code></li>
+                                <li><strong>Forward Hostname / IP:</strong> <code>stirling-pdf</code> (Matches container name).</li>
+                                <li><strong>Forward Port:</strong> <code>8080</code> (Internal port).</li>
+                                <li><strong>SSL Tab:</strong> Request a new SSL Certificate and Force SSL.</li>
                             </ul>
                         </li>
                     </ol>
-                    <p>Your PDF tool is now ready to use at <code>https://pdf.yourdomain.com</code>.</p>
+                </section>
+
+                <section id="section-5">
+                    <h2>Part 3: Advanced Split Deployment</h2>
+                    <p>For high-traffic setups, you can scale the Frontend and Backend independently using the V2.0+ architecture. <strong>Only use this if you know you need it.</strong></p>
+                    
+                    <h3>Split `docker-compose.yml`</h3>
+                    <pre><code class="language-yaml">services:
+  # Backend - PDF processing engine
+  stirling-backend:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-backend
+    volumes:
+      - ./stirling-data/tessdata:/usr/share/tessdata
+      - ./stirling-data/configs:/configs
+    environment:
+      - MODE=BACKEND
+    restart: unless-stopped
+    networks:
+      - nginx-proxy
+
+  # Frontend - Web interface
+  stirling-frontend:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-frontend
+    ports:
+      - '8085:8080'
+    environment:
+      - MODE=FRONTEND
+      # Internal DNS name of the backend service
+      - VITE_API_BASE_URL=http://stirling-backend:8080
+    depends_on:
+      - stirling-backend
+    restart: unless-stopped
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external: true
+</code></pre>
+                    <div class="info-box" style="border-color: #dc3545;">
+                        <p><strong>Nginx Proxy Manager Note:</strong> If using Split Deployment, your Proxy Host must point to <strong>Hostname:</strong> <code>stirling-frontend</code> (NOT stirling-pdf).</p>
+                    </div>
                 </section>
                 
-                <section id="section-4">
+                <section id="section-6">
                     <h2>Part 4: Management & Cleanup</h2>
-                    <p>Common tasks for maintaining, updating, or removing the service.</p>
-
-                    <h3>1. Updating to the Latest Version</h3>
-                    <p>Stirling-PDF gets frequent updates. To grab the latest features:</p>
-                    <pre><code class="language-bash"># Navigate to the directory
-cd /root/docker-deployment/stirling-pdf
-
-# Pull the latest image
-docker compose pull
-
-# Restart the service (this replaces the old container with the new one)
-docker compose up -d
-
-# (Optional) Clean up the old, unused image version to save space
-docker image prune
-</code></pre>
-
-                    <h3>2. "Hard Reset" (Wipe & Reinstall)</h3>
-                    <p>If the service is acting strange and you want to delete it and start fresh (keeping your config file):</p>
+                    
+                    <h3>Updating</h3>
                     <pre><code class="language-bash">cd /root/docker-deployment/stirling-pdf
-
-# Stop and remove the container
-docker compose down
-
-# Start it up again fresh
+docker compose pull
 docker compose up -d
 </code></pre>
 
-                    <h3>3. Clean Up "Useless" Images</h3>
-                    <p>If you have updated multiple times, or uninstalled other services, you may have "dangling" images taking up space. This command removes them safely.</p>
-                    <pre><code class="language-bash"># Removes images that are not associated with any container
-docker image prune
+                    <h3>Cleaning Up Old Images</h3>
+                    <pre><code class="language-bash">docker image prune -f
 </code></pre>
 
-                    <h3>4. Complete Decommissioning (Uninstall)</h3>
-                    <p>To completely remove Stirling-PDF, including its data and the downloaded image:</p>
+                    <h3>Complete Uninstall</h3>
+                    <p>To completely remove Stirling-PDF, its data, and images:</p>
                      <ol>
-                        <li>
-                            <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the host for `pdf.yourdomain.com`.
-                        </li>
-                        <li>
-                            <strong>Stop and Remove Data:</strong>
+                        <li><strong>Remove Proxy Host</strong> in Nginx Proxy Manager.</li>
+                        <li><strong>Stop and Remove Data:</strong>
                             <pre><code class="language-bash">cd /root/docker-deployment/stirling-pdf
-
-# Stop the service and remove volumes (-v)
 docker compose down -v
-</code></pre>
-                        </li>
-                         <li>
-                            <strong>Delete the Project Folder:</strong>
-                             <pre><code class="language-bash">cd ..
+cd ..
 rm -rf stirling-pdf
 </code></pre>
-                         </li>
-                         <li>
-                             <strong>Remove the Docker Image:</strong>
-                             <pre><code class="language-bash"># This frees up the disk space used by the installer
-docker rmi frooodle/s-pdf:latest
+                        </li>
+                         <li><strong>Remove Image:</strong>
+                             <pre><code class="language-bash">docker rmi stirlingtools/stirling-pdf:latest
 </code></pre>
                          </li>
                     </ol>
@@ -248,9 +296,7 @@ docker rmi frooodle/s-pdf:latest
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- COPY BUTTON LOGIC ---
             document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
-            // --- THEME TOGGLE LOGIC ---
             const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
         });
     </script>
