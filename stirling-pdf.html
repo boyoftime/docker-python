@@ -1,5 +1,3 @@
---- START OF FILE stirling-pdf.html ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,8 +127,8 @@ cd /root/docker-deployment/stirling-pdf
       - ./extraConfigs:/configs
       - ./logs:/logs
     environment:
-      # We disable built-in login because we will secure it via Nginx Proxy Manager later
-      - DOCKER_ENABLE_SECURITY=false
+      # ENABLE SECURITY: Required to change admin settings
+      - DOCKER_ENABLE_SECURITY=true
       - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
       - LANGS=en_US
     networks:
@@ -145,7 +143,12 @@ networks:
                     <h3>Step 3: Launch the Service</h3>
                     <pre><code class="language-bash">docker compose up -d
 </code></pre>
-                    <p>You can verify it is running by visiting <code>http://YOUR_SERVER_IP:8085</code>.</p>
+                    <div class="info-box">
+                        <p><strong>Default Credentials:</strong><br>
+                        Username: <code>admin</code><br>
+                        Password: <code>stirling</code><br>
+                        <em>(Please change these in the settings immediately)</em></p>
+                    </div>
                 </section>
 
                 <section id="section-3">
