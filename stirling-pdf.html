@@ -91,7 +91,7 @@
                         <li><a href="#section-1">What is Stirling-PDF?</a></li>
                         <li><a href="#section-2">Part 1: Installing with Docker</a></li>
                         <li><a href="#section-3">Part 2: Securing with Nginx Proxy Manager</a></li>
-                        <li><a href="#section-4">Part 3: Decommissioning</a></li>
+                        <li><a href="#section-4">Part 4: Management & Cleanup</a></li>
                     </ul>
                 </nav>
 
@@ -173,15 +173,52 @@ networks:
                 </section>
                 
                 <section id="section-4">
-                    <h2>Part 3: Decommissioning</h2>
-                    <p>If you no longer need Stirling-PDF, follow these steps to remove it.</p>
+                    <h2>Part 4: Management & Cleanup</h2>
+                    <p>Common tasks for maintaining, updating, or removing the service.</p>
+
+                    <h3>1. Updating to the Latest Version</h3>
+                    <p>Stirling-PDF gets frequent updates. To grab the latest features:</p>
+                    <pre><code class="language-bash"># Navigate to the directory
+cd /root/docker-deployment/stirling-pdf
+
+# Pull the latest image
+docker compose pull
+
+# Restart the service (this replaces the old container with the new one)
+docker compose up -d
+
+# (Optional) Clean up the old, unused image version to save space
+docker image prune
+</code></pre>
+
+                    <h3>2. "Hard Reset" (Wipe & Reinstall)</h3>
+                    <p>If the service is acting strange and you want to delete it and start fresh (keeping your config file):</p>
+                    <pre><code class="language-bash">cd /root/docker-deployment/stirling-pdf
+
+# Stop and remove the container
+docker compose down
+
+# Start it up again fresh
+docker compose up -d
+</code></pre>
+
+                    <h3>3. Clean Up "Useless" Images</h3>
+                    <p>If you have updated multiple times, or uninstalled other services, you may have "dangling" images taking up space. This command removes them safely.</p>
+                    <pre><code class="language-bash"># Removes images that are not associated with any container
+docker image prune
+</code></pre>
+
+                    <h3>4. Complete Decommissioning (Uninstall)</h3>
+                    <p>To completely remove Stirling-PDF, including its data and the downloaded image:</p>
                      <ol>
                         <li>
                             <strong>Remove the Proxy Host:</strong> In Nginx Proxy Manager, delete the host for `pdf.yourdomain.com`.
                         </li>
                         <li>
-                            <strong>Take Down the Docker Service:</strong>
+                            <strong>Stop and Remove Data:</strong>
                             <pre><code class="language-bash">cd /root/docker-deployment/stirling-pdf
+
+# Stop the service and remove volumes (-v)
 docker compose down -v
 </code></pre>
                         </li>
@@ -189,6 +226,12 @@ docker compose down -v
                             <strong>Delete the Project Folder:</strong>
                              <pre><code class="language-bash">cd ..
 rm -rf stirling-pdf
+</code></pre>
+                         </li>
+                         <li>
+                             <strong>Remove the Docker Image:</strong>
+                             <pre><code class="language-bash"># This frees up the disk space used by the installer
+docker rmi frooodle/s-pdf:latest
 </code></pre>
                          </li>
                     </ol>
