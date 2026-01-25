@@ -169,6 +169,20 @@
                                 <td><span class="badge badge-tcp">TCP</span></td>
                                 <td>Secure UI for Portainer.</td>
                             </tr>
+                            <tr>
+                                <td><strong>Beszel Dashboard</strong></td>
+                                <td><code>8094</code></td>
+                                <td>8090</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>System Monitoring UI.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Beszel Agent</strong></td>
+                                <td><code>45876</code></td>
+                                <td>45876</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Monitoring Data Collector.</td>
+                            </tr>
 
                             <!-- APPLICATION PORTS -->
                             <tr>
@@ -192,6 +206,38 @@
                                 <td><span class="badge badge-tcp">TCP</span></td>
                                 <td>Web UI for managing VPN users.</td>
                             </tr>
+                            
+                            <!-- STALWART MAIL SERVER -->
+                            <tr>
+                                <td><strong>Stalwart Admin</strong></td>
+                                <td><code>8080</code></td>
+                                <td>8080</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Mail Server Web Interface.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stalwart (SMTP/S)</strong></td>
+                                <td><code>25, 465, 587</code></td>
+                                <td>Same</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Sending and Receiving Email.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stalwart (IMAP/S)</strong></td>
+                                <td><code>143, 993</code></td>
+                                <td>Same</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Reading Email.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stalwart (Sieve)</strong></td>
+                                <td><code>4190</code></td>
+                                <td>4190</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Email Filters.</td>
+                            </tr>
+
+                            <!-- OTHER APPS -->
                             <tr>
                                 <td><strong>phpMyAdmin</strong></td>
                                 <td><code>8082</code></td>

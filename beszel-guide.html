@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up Beszel System Monitoring</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Monitoring Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up Beszel System Monitoring</h1>
+                    <p>A Lightweight, Modern Dashboard for CPU, RAM, Disk, and Docker Stats</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">Why Beszel?</a></li>
+                        <li><a href="#section-2">Part 1: Installation with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Configuring the Agent Key</a></li>
+                        <li><a href="#section-4">Part 3: Securing with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-5">Part 4: Decommissioning</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>Why Beszel?</h2>
+                    <p>Unlike heavy monitoring tools (like Prometheus/Grafana), Beszel is incredibly lightweight. It gives you exactly what you need:</p>
+                    <ul>
+                        <li>Historical data (CPU/RAM usage over time).</li>
+                        <li>Specific Docker container usage (Find out which app is eating your RAM).</li>
+                        <li>Disk space alerts.</li>
+                        <li>A beautiful, modern interface.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Part 1: Installation with Docker</h2>
+                    <p>Beszel has two parts: The <strong>Hub</strong> (Dashboard) and the <strong>Agent</strong> (Data Collector). We will run both.</p>
+
+                    <h3>Step 1: Create the Project Directory</h3>
+                    <pre><code class="language-bash">mkdir -p /root/docker-deployment/monitoring
+cd /root/docker-deployment/monitoring
+</code></pre>
+
+                    <h3>Step 2: Create the `docker-compose.yml` File</h3>
+                    <pre><code class="language-bash">nano docker-compose.yml
+</code></pre>
+                    <p>Paste the following configuration. We use port <code>8094</code> for the dashboard.</p>
+                    <pre><code class="language-yaml">services:
+  # The Dashboard (UI)
+  beszel-hub:
+    image: henrygd/beszel:latest
+    container_name: beszel-hub
+    restart: unless-stopped
+    ports:
+      - "8094:8090"
+    volumes:
+      - ./beszel_data:/beszel_data
+    networks:
+      - nginx-proxy
+
+  # The Agent (Reads the stats)
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    restart: unless-stopped
+    network_mode: host # Required to read system stats accurately
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # To read Docker stats
+    environment:
+      - PORT=45876
+      # We will add the KEY here in the next step
+      - KEY=
+      # Optional: Monitor specific disk
+      - FILESYSTEM=/dev/sda1
+
+networks:
+  nginx-proxy:
+    external: true
+</code></pre>
+
+                    <h3>Step 3: Initial Launch (Hub Only)</h3>
+                    <p>We start the Hub first to generate an encryption key.</p>
+                    <pre><code class="language-bash">docker compose up -d beszel-hub
+</code></pre>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: Configuring the Agent Key</h2>
+                    <p>The Agent needs a secure key to talk to the Hub. This requires a quick setup in the browser.</p>
+
+                    <ol>
+                        <li><strong>Open Firewall:</strong> Ensure Port <strong>45876 (TCP)</strong> is allowed in your VPS firewall (for the Agent).</li>
+                        <li><strong>Access the Hub:</strong> Go to <code>http://YOUR_SERVER_IP:8094</code>.</li>
+                        <li><strong>Create Admin Account:</strong> Follow the prompt to create your login.</li>
+                        <li><strong>Add System:</strong>
+                            <ul>
+                                <li>Click <strong>"+ Add System"</strong>.</li>
+                                <li><strong>Name:</strong> `My VPS`</li>
+                                <li><strong>Host / IP:</strong> Enter your server's <strong>Public IP Address</strong>.</li>
+                                <li><strong>Port:</strong> `45876`</li>
+                                <li><strong>Public Key:</strong> Click the Copy icon <span style="font-size:1.2em">📋</span> next to the key starting with `ssh-ed25519`.</li>
+                                <li><strong>DO NOT click "Add system" yet!</strong></li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h3>Update Docker Compose</h3>
+                    <p>Go back to your terminal and edit the compose file to add the key.</p>
+                    <pre><code class="language-bash">nano docker-compose.yml
+</code></pre>
+                    <p>Find the <code>beszel-agent</code> section and paste your key:</p>
+                    <pre><code class="language-yaml">    environment:
+      - PORT=45876
+      - KEY=ssh-ed25519 AAAAC3Nz... (Paste your exact key here)
+</code></pre>
+                    <p>Save and exit.</p>
+
+                    <h3>Start the Agent</h3>
+                    <pre><code class="language-bash">docker compose up -d
+</code></pre>
+
+                    <p>Now, go back to your browser and click the <strong>"Add system"</strong> button. It should turn green and show your stats!</p>
+                </section>
+                
+                <section id="section-4">
+                    <h2>Part 3: Securing with Nginx Proxy Manager</h2>
+                    <p>Access the dashboard securely via a domain.</p>
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> Create an 'A' record for `monitor.yourdomain.com` pointing to your server IP.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
+                        <li><strong>Add Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Domain:</strong> `monitor.yourdomain.com`</li>
+                                <li><strong>Forward Hostname:</strong> `beszel-hub`</li>
+                                <li><strong>Forward Port:</strong> `8090` (Internal container port)</li>
+                                <li><strong>SSL:</strong> Request Certificate & Force SSL.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </section>
+
+                <section id="section-5">
+                    <h2>Part 4: Decommissioning</h2>
+                    <p>To remove the monitoring system:</p>
+                     <pre><code class="language-bash"># Remove Proxy Host in NPM first.
+
+# Stop and remove containers and data
+cd /root/docker-deployment/monitoring
+docker compose down -v
+
+# Remove directory
+cd ..
+rm -rf monitoring
+</code></pre>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>
