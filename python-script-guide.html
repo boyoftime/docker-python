@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Hosting Custom Python Scripts & Bots</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+            --error-bg: #f8d7da; --error-border: #f5c6cb; --error-text: #721c24;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            --error-bg: #442a2d; --error-border: #8a3b3b; --error-text: #ffb3b3;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box, .error-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .error-box { background-color: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Python Bot Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Hosting Custom Python Scripts (Bots)</h1>
+                    <p>How to deploy long-running background automation scripts with Docker</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">The Golden Rules of Background Scripts</a></li>
+                        <li><a href="#section-2">Step 1: Preparing the Project</a></li>
+                        <li><a href="#section-3">Step 2: Choose Your Script (Two Examples)</a></li>
+                        <li><a href="#section-4">Step 3: Dependencies & Dockerfile</a></li>
+                        <li><a href="#section-5">Step 4: Running & Monitoring</a></li>
+                        <li><a href="#section-6">Step 5: How to Uninstall</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>The Golden Rules of Background Scripts</h2>
+                    <p>Running a Python script in a Docker container is different from running it on your laptop. Because there is no screen and no keyboard attached to the container, you must follow these rules:</p>
+                    
+                    <div class="error-box">
+                        <h3>❌ WHAT YOU CANNOT DO</h3>
+                        <ul>
+                            <li><strong>NO <code>input()</code>:</strong> You cannot ask the user to type anything. The script will crash immediately.</li>
+                            <li><strong>NO GUIs:</strong> You cannot use <code>tkinter</code>, <code>pygame</code>, or open web browser windows.</li>
+                            <li><strong>NO Interactive Menus:</strong> You cannot have "Press 1 for settings, Press 2 to run".</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <h3>✅ WHAT YOU CAN DO</h3>
+                        <ul>
+                            <li><strong>Hardcode Settings:</strong> You must write your API Keys, passwords, and settings directly into the top of the script variables.</li>
+                            <li><strong>Infinite Loops:</strong> Use <code>while True:</code> to keep the bot running forever.</li>
+                            <li><strong>Print to Logs:</strong> Use <code>print()</code> to show status updates in the Docker logs.</li>
+                        </ul>
+                    </div>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Step 1: Preparing the Project</h2>
+                    <p>Create a clean directory for your bot.</p>
+                    <pre><code class="language-bash">mkdir -p /root/docker-deployment/my-bot
+cd /root/docker-deployment/my-bot
+</code></pre>
+
+                    <p>Create the python file:</p>
+                    <pre><code class="language-bash">nano bot.py
+</code></pre>
+                </section>
+
+                <section id="section-3">
+                    <h2>Step 2: Choose Your Script</h2>
+                    <p>Below are two sample scripts you can use to test your setup. Choose one, copy it into <code>bot.py</code>, and <strong>edit the configuration variables at the top.</strong></p>
+
+                    <h3>Option A: The Telegram "Heartbeat" Bot</h3>
+                    <p>This script sends a message to your Telegram every hour to let you know your server is alive.</p>
+                    <pre><code class="language-python">import requests
+import time
+from datetime import datetime
+
+# ==========================================
+# ⚙️ CONFIGURATION (EDIT THIS SECTION)
+# ==========================================
+TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE"
+MESSAGE_TEXT = "🤖 Beep Boop! Your server is running smoothly."
+CHECK_INTERVAL_SECONDS = 3600  # Send every 1 hour
+# ==========================================
+
+def send_telegram(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print(f"[{datetime.now()}] ✅ Message sent successfully.")
+        else:
+            print(f"[{datetime.now()}] ❌ Failed to send: {response.text}")
+    except Exception as e:
+        print(f"[{datetime.now()}] ❌ Connection Error: {e}")
+
+print("🚀 Bot started! Waiting to send first message...")
+
+while True:
+    send_telegram(MESSAGE_TEXT)
+    print(f"Sleeping for {CHECK_INTERVAL_SECONDS} seconds...")
+    time.sleep(CHECK_INTERVAL_SECONDS)
+</code></pre>
+
+                    <h3>Option B: Bitcoin Price Tracker</h3>
+                    <p>This script checks the price of Bitcoin every 60 seconds and logs it to the console.</p>
+                    <pre><code class="language-python">import requests
+import time
+from datetime import datetime
+
+# ==========================================
+# ⚙️ CONFIGURATION (EDIT THIS SECTION)
+# ==========================================
+CURRENCY = "bitcoin"
+VS_CURRENCY = "usd"
+CHECK_INTERVAL_SECONDS = 60
+# ==========================================
+
+print(f"🚀 Tracking {CURRENCY} price every {CHECK_INTERVAL_SECONDS} seconds...")
+
+while True:
+    try:
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={CURRENCY}&vs_currencies={VS_CURRENCY}"
+        response = requests.get(url)
+        data = response.json()
+        
+        price = data[CURRENCY][VS_CURRENCY]
+        
+        # This print statement will show up in your Docker Logs/Portainer
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 💰 Current Price: ${price}")
+        
+    except Exception as e:
+        print(f"❌ Error fetching price: {e}")
+
+    time.sleep(CHECK_INTERVAL_SECONDS)
+</code></pre>
+                </section>
+
+                <section id="section-4">
+                    <h2>Step 3: Dependencies & Dockerfile</h2>
+                    
+                    <h3>1. Create requirements.txt</h3>
+                    <p>Tell Docker which libraries to install (e.g., `requests`).</p>
+                    <pre><code class="language-bash">nano requirements.txt
+</code></pre>
+                    <pre><code class="language-text">requests
+certifi
+</code></pre>
+
+                    <h3>2. Create Dockerfile</h3>
+                    <p>This tells Docker how to run Python. The <code>-u</code> flag is critical—it ensures logs show up instantly.</p>
+                    <pre><code class="language-bash">nano Dockerfile
+</code></pre>
+                    <pre><code class="language-dockerfile">FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY bot.py .
+
+# The -u flag (unbuffered) lets you see print() statements instantly
+CMD ["python", "-u", "bot.py"]
+</code></pre>
+
+                    <h3>3. Create docker-compose.yml</h3>
+                    <pre><code class="language-bash">nano docker-compose.yml
+</code></pre>
+                    <pre><code class="language-yaml">services:
+  my-bot:
+    build: .
+    container_name: python_bot_1
+    restart: unless-stopped
+    volumes:
+      # Allows you to edit bot.py on the server and restart to apply changes
+      - ./bot.py:/app/bot.py
+</code></pre>
+                </section>
+
+                <section id="section-5">
+                    <h2>Step 4: Running & Monitoring</h2>
+                    
+                    <h3>Start the Bot</h3>
+                    <pre><code class="language-bash">cd /root/docker-deployment/my-bot
+docker compose up -d --build
+</code></pre>
+
+                    <h3>View the Logs (Real-time)</h3>
+                    <p>You will see your <code>print()</code> statements appear here.</p>
+                    <pre><code class="language-bash">docker compose logs -f
+</code></pre>
+
+                    <h3>How to Update Settings</h3>
+                    <ol>
+                        <li>Edit the script: <code>nano bot.py</code></li>
+                        <li>Change your variables in the "CONFIGURATION" section.</li>
+                        <li>Restart the container: <code>docker compose restart</code></li>
+                    </ol>
+                </section>
+                
+                <section id="section-6">
+                    <h2>Step 5: How to Uninstall</h2>
+                    <p>If you are done with the bot and want to remove it completely:</p>
+                    <pre><code class="language-bash"># 1. Stop and remove the container
+cd /root/docker-deployment/my-bot
+docker compose down
+
+# 2. Delete the folder (PERMANENT)
+cd ..
+rm -rf my-bot
+</code></pre>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>

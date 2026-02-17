@@ -150,6 +150,27 @@ networks:
   nginx-proxy:
     external: true
 </code></pre>
+                    <h3>Optional: Granting Full System Access</h3>
+                    <p>By default, the configuration above restricts FileBrowser to the <code>/root/docker-deployment</code> folder for safety. If you need to manage your <strong>entire server filesystem</strong> (including system files), you must modify the volume mapping.</p>
+
+                    <div class="info-box" style="border-color: #dc3545; background-color: #fff5f5; color: #721c24;">
+                        <p><strong>⚠️ Security Warning:</strong> Enabling full system access gives this web interface "Root" privileges. If a hacker guesses your password, they can delete your entire operating system. Ensure you set a very strong password.</p>
+                    </div>
+
+                    <p>In your <code>docker-compose.yml</code>, locate the <strong>volumes</strong> section. You simply need to replace one line:</p>
+
+                    <pre><code class="language-yaml">    volumes:
+      # 🔴 REMOVE THIS LINE (Limits view to project folder):
+      # - /root/docker-deployment:/srv
+
+      # 🟢 REPLACE WITH THIS LINE (Allows view of whole OS):
+      - /:/srv
+
+      # Keep the config line exactly as it is:
+      - ./config:/config</code></pre>
+
+                    <p>If you make this change, you must force Docker to recreate the container to apply it:</p>
+                    <pre><code class="language-bash">docker compose up -d --force-recreate</code></pre>
 
                     <h3>Step 3: Launch FileBrowser</h3>
                     <p>With the configuration set, navigate to the directory and start the service.</p>
