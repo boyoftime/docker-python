@@ -164,12 +164,15 @@ def send_telegram(message):
     except Exception as e:
         print(f"[{datetime.now()}] ❌ Connection Error: {e}")
 
-print("🚀 Bot started! Waiting to send first message...")
+def main():
+    print("🚀 Bot started! Waiting to send first message...")
+    while True:
+        send_telegram(MESSAGE_TEXT)
+        print(f"Sleeping for {CHECK_INTERVAL_SECONDS} seconds...")
+        time.sleep(CHECK_INTERVAL_SECONDS)
 
-while True:
-    send_telegram(MESSAGE_TEXT)
-    print(f"Sleeping for {CHECK_INTERVAL_SECONDS} seconds...")
-    time.sleep(CHECK_INTERVAL_SECONDS)
+if __name__ == "__main__":
+    main()
 </code></pre>
 
                     <h3>Option B: Bitcoin Price Tracker</h3>
@@ -186,23 +189,27 @@ VS_CURRENCY = "usd"
 CHECK_INTERVAL_SECONDS = 60
 # ==========================================
 
-print(f"🚀 Tracking {CURRENCY} price every {CHECK_INTERVAL_SECONDS} seconds...")
+def main():
+    print(f"🚀 Tracking {CURRENCY} price every {CHECK_INTERVAL_SECONDS} seconds...")
 
-while True:
-    try:
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={CURRENCY}&vs_currencies={VS_CURRENCY}"
-        response = requests.get(url)
-        data = response.json()
-        
-        price = data[CURRENCY][VS_CURRENCY]
-        
-        # This print statement will show up in your Docker Logs/Portainer
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 💰 Current Price: ${price}")
-        
-    except Exception as e:
-        print(f"❌ Error fetching price: {e}")
+    while True:
+        try:
+            url = f"https://api.coingecko.com/api/v3/simple/price?ids={CURRENCY}&vs_currencies={VS_CURRENCY}"
+            response = requests.get(url)
+            data = response.json()
+            
+            price = data[CURRENCY][VS_CURRENCY]
+            
+            # This print statement will show up in your Docker Logs/Portainer
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 💰 Current Price: ${price}")
+            
+        except Exception as e:
+            print(f"❌ Error fetching price: {e}")
 
-    time.sleep(CHECK_INTERVAL_SECONDS)
+        time.sleep(CHECK_INTERVAL_SECONDS)
+
+if __name__ == "__main__":
+    main()
 </code></pre>
                 </section>
 

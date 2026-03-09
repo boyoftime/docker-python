@@ -153,6 +153,7 @@ nano /root/docker-deployment/database/docker-compose.yml
       # 'db' is the SERVICE NAME of our MySQL container above.
       PMA_HOST: db
       PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
     ports:
     - "8082:80" # Map host port 8082 to the container's internal port 80
     depends_on:
@@ -319,6 +320,7 @@ docker compose start db
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
     ports:
     - "8082:80"
     depends_on:
@@ -354,9 +356,51 @@ app.config['MYSQL_DB'] = 'your_app_database'
 </code></pre>
                 </section>
 
-
                 <section id="section-7">
-                    <h2>Part 6: Decommissioning the Database</h2>
+                    <h2>Part 6: Hiding System Databases (Cleaner Interface)</h2>
+                    <p>By default, phpMyAdmin displays several "System Databases" in the sidebar (<code>information_schema</code>, <code>performance_schema</code>, etc.). These can clutter your view, especially if you have restricted users who shouldn't worry about server internals.</p>
+
+                    <div class="info-box">
+                        <p><strong>What are these databases?</strong></p>
+                        <ul>
+                            <li><strong>information_schema:</strong> A read-only database that stores metadata about your tables, columns, and permissions.</li>
+                            <li><strong>performance_schema:</strong> Monitors server execution at a low level (memory usage, query locks, etc.).</li>
+                            <li><strong>sys:</strong> A set of views that makes the <code>performance_schema</code> easier for humans to read.</li>
+                            <li><strong>mysql:</strong> The core database that stores user accounts, passwords, and global privileges.</li>
+                        </ul>
+                        <p><em>Note: You cannot delete these. phpMyAdmin needs them to function, but we can safely <strong>hide</strong> them from the UI.</em></p>
+                    </div>
+
+                    <h3>Step 1: Create a Configuration File</h3>
+                    <p>Create a new file named <code>config.user.inc.php</code> inside your <code>/root/docker-deployment/database/</code> directory.</p>
+                    <pre><code class="language-php">&lt;?php
+/* Hide system databases and the phpmyadmin storage db from the sidebar */
+$i = 1;
+$cfg['Servers'][$i]['hide_db'] = '^(information_schema|performance_schema|sys|mysql|phpmyadmin)$';
+?&gt;</code></pre>
+
+                    <h3>Step 2: Mount the File in Docker</h3>
+                    <p>Open your <code>docker-compose.yml</code> and update the <strong>phpmyadmin</strong> service to mount this file. You do not need to change the environment variables.</p>
+                    <pre><code class="language-yaml">  # ... inside docker-compose.yml
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    # ... other settings ...
+    volumes:
+      # Map the local config file to the container's configuration path
+      - ./config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
+    # ... networks, depends_on, etc ...
+</code></pre>
+
+                    <h3>Step 3: Apply Changes</h3>
+                    <p>Since we added a new volume, we must recreate the container.</p>
+                    <pre><code class="language-bash">docker compose up -d --force-recreate</code></pre>
+                    <p>Finally, <strong>clear your browser cache</strong> or log out and log back in. The sidebar will now be clean, showing only your application databases.</p>
+                </section>
+
+
+
+                <section id="section-8">
+                    <h2>Part 7: Decommissioning the Database</h2>
                     <p>If you no longer need your database, it's important to remove it cleanly to free up system resources. Follow these steps in order to permanently remove the database, phpMyAdmin, and all associated data.</p>
                     
                     <ol>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up Code-Server (VS Code)</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+            --error-bg: #fff5f5; --error-border: #ffcccc; --error-text: #cc0000;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            --error-bg: #2c0b0e; --error-border: #8a1f1f; --error-text: #ff6b6b;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box, .error-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .error-box { background-color: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Development Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up Code-Server (VS Code)</h1>
+                    <p>Run a Full Visual Studio Code IDE Directly in Your Browser</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">Why Code-Server?</a></li>
+                        <li><a href="#section-2">Part 1: Installation with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Securing with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-4">Part 3: Python Setup Masterclass (The `uv` Method)</a></li>
+                        <li><a href="#section-5">Part 4: Managing Environments (Activate/Deactivate)</a></li>
+                        <li><a href="#section-6">Part 5: Previewing Your Apps (The "Ports" Tab)</a></li>
+                        <li><a href="#section-7">Part 6: Deploying to Public (The Real Way)</a></li>
+                        <li><a href="#section-8">Part 7: Decommissioning</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>Why Code-Server?</h2>
+                    <p>Code-Server runs Visual Studio Code on your remote server. This setup allows you to:</p>
+                    <ul>
+                        <li>Code from any device (iPad, Laptop, Phone).</li>
+                        <li>Use your server's powerful resources (CPU/RAM).</li>
+                        <li>Run Python scripts interactively using the built-in terminal.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-2">
+                    <h2>Part 1: Installation with Docker</h2>
+                    <p>We will set up Code-Server with persistent storage for your settings and your code.</p>
+
+                    <h3>Step 1: Create the Project Directory</h3>
+                    <pre><code class="language-bash"># Create directory for Code-Server
+mkdir -p /root/docker-deployment/code-server
+cd /root/docker-deployment/code-server
+
+# Create a workspace folder for your code
+mkdir workspace
+</code></pre>
+
+                    <h3>Step 2: Create the `docker-compose.yml` File</h3>
+                    <pre><code class="language-bash">nano docker-compose.yml
+</code></pre>
+                    <p>Paste the configuration below. <strong>Note the new DNS section</strong>—this is critical for installing tools like `uv` later.</p>
+                    <pre><code class="language-yaml">services:
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+
+      # --- ACCESS SECURITY ---
+      # This is the password you type in your BROWSER to log in to the IDE.
+      - PASSWORD=your_secure_login_password
+      
+      # --- TERMINAL SECURITY ---
+      # This is the password you type in the TERMINAL if you run 'sudo' commands.
+      - SUDO_PASSWORD=your_sudo_root_password
+      
+      # Optional: Helps with proxy handling if you run web Apps
+      #you can remove it if u want vs code to create localhost link automatically
+      - PROXY_DOMAIN=code.yourdomain.com
+
+    volumes:
+      # Stores VS Code settings, extensions, and themes
+      - ./config:/config
+      # Stores your actual code projects
+      - ./workspace:/config/workspace
+    
+    # CRITICAL: Fixes "Could not resolve host" errors when installing tools
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external: true
+</code></pre>
+
+                    <h3>Step 3: Launch Code-Server</h3>
+                    <pre><code class="language-bash">docker compose up -d
+</code></pre>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: Securing with Nginx Proxy Manager</h2>
+                    <p>To use Code-Server securely, we must use HTTPS via Nginx Proxy Manager.</p>
+
+                    <ol>
+                        <li><strong>Point a Subdomain:</strong> Create an 'A' record for `code.yourdomain.com` pointing to your server IP.</li>
+                        <li><strong>Log in to Nginx Proxy Manager.</strong></li>
+                        <li><strong>Add Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Domain Names:</strong> `code.yourdomain.com`</li>
+                                <li><strong>Scheme</strong> <code>http</code></li>
+                                <li><strong>Forward Hostname / IP:</strong> `code-server`</li>
+                                <li><strong>Forward Port:</strong> `8443`</li>
+                                <li><strong style="color: #d63384;">CRITICAL:</strong> Turn on <strong>"Websockets Support"</strong>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>SSL Tab:</strong> Request a new SSL Certificate & Force SSL.</li>
+                    </ol>
+                </section>
+
+                <section id="section-4">
+                    <h2>Part 3: Python Setup Masterclass (The `uv` Method)</h2>
+                    <p>By default, the environment is bare. We will use <strong>uv</strong> (a super-fast Python tool) to install Python 3.12.10 and manage dependencies.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Perform these steps inside the VS Code Terminal</strong> (Ctrl + `), NOT your VPS SSH terminal.</p>
+                    </div>
+
+                    <h3>Step 1: One-Time System Fix (Important!)</h3>
+                    <p>The default Docker image has a setting that conflicts with `uv`. Run this block <strong>once</strong> to fix it permanently.</p>
+                    <pre><code class="language-bash"># 1. Add uv to the permanent path
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+
+# 2. Fix the error by unsetting the broken system variable
+echo 'unset VIRTUAL_ENV' >> ~/.bashrc
+
+# 3. Reload the shell settings immediately
+source ~/.bashrc
+</code></pre>
+
+                    <h3>Step 2: Install `uv`</h3>
+                    <pre><code class="language-bash">curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+</code></pre>
+                    <p>Verify it works by typing <code>uv --version</code>.</p>
+
+                    <h3>Step 3: Choose Your Workflow</h3>
+                    <p>How do you want to use Python? Choose Option A or Option B.</p>
+
+                    <div class="info-box">
+                        <h4>Option A: "Global" Environment (Easy Mode)</h4>
+                        <p>Best if you just want to run scripts without setting up a folder every time.</p>
+                        <pre><code class="language-bash"># 1. Create a main environment with Python 3.12.10
+cd ~
+uv venv my_global_env --python 3.12.10
+
+# 2. Make it auto-activate every time you open a terminal
+echo 'source ~/my_global_env/bin/activate' >> ~/.bashrc
+source ~/.bashrc
+
+# 3. Install packages globally
+uv pip install flask pandas numpy
+</code></pre>
+                    <h3>Step 4: Configure VS Code to "See" Python</h3>
+                    <p>VS Code needs to know exactly where your new Python is located so the "Play" button works.</p>
+                    <ol>
+                        <li>Open a Python file (e.g., <code>app.py</code>).</li>
+                        <li>Press <code>F1</code> or <code>Ctrl+Shift+P</code> to open the Command Palette.</li>
+                        <li>Type and select: <strong>Python: Select Interpreter</strong>.</li>
+                        <li>Select <strong>"Enter interpreter path..."</strong>.</li>
+                        <li>Paste one of these paths (they point to the same place):
+                            <ul>
+                                <li><code>~/my_global_env/bin/python</code> (Short format)</li>
+                                <li><code>/config/my_global_env/bin/python</code> (Absolute path)</li>
+                            </ul>
+                        </li>
+                        <li>Press Enter. VS Code will now load this Python version automatically.</li>
+                    </ol>
+                    
+                    <div class="info-box">
+                        <p><strong>Pro Tip: Find your path automatically</strong><br>
+                        If you are ever unsure where your Python is installed, simply type <code>which python</code> in the terminal.
+                        <br><br>
+                        It will return the exact path, for example: <code>/config/my_global_env/bin/python</code>.
+                        <br>
+                        You can copy this path and use it in the "Enter interpreter path" box.</p>
+                    </div>
+                    </div>
+
+                    <div style="margin-top: 2rem;" class="info-box">
+                        <h4>Option B: Project-Specific Environment (Pro Mode)</h4>
+                        <p>Best for real projects (like `workspace`) to keep dependencies isolated.</p>
+                        <pre><code class="language-bash"># 1. Go to your project folder
+cd /config/workspace
+
+# 2. Create a fresh environment just for this folder
+uv venv .venv --python 3.12.10
+
+# 3. Activate it
+source .venv/bin/activate
+
+# 4. Install packages just for this project
+uv pip install flask
+</code></pre>
+                    </div>
+                </section>
+
+                <section id="section-5">
+                    <h2>Part 4: Managing Environments (Activate/Deactivate)</h2>
+                    
+                    <h3>How to "Deactivate" Temporarily</h3>
+                    <p>If you want to exit the Python environment for just this session:</p>
+                    <pre><code class="language-bash">deactivate</code></pre>
+                    <p>Your prompt will lose the `(my_global_env)` prefix.</p>
+
+                    <h3>How to "Deactivate" Permanently</h3>
+                    <p>If you used Option A (Global Auto-Start) and want to stop it:</p>
+                    <ol>
+                        <li>Open the configuration file: <code>nano ~/.bashrc</code></li>
+                        <li>Scroll to the bottom and find: <code>source ~/my_global_env/bin/activate</code></li>
+                        <li>Add a <code>#</code> in front of it to comment it out: <code># source ...</code></li>
+                        <li>Save (Ctrl+X, Y, Enter) and restart your terminal.</li>
+                    </ol>
+
+                    <h3>About `which python`</h3>
+                    <p>If you are confused about which Python you are running, type:</p>
+                    <pre><code class="language-bash">which python</code></pre>
+                    <ul>
+                        <li>If it says <code>/config/my_global_env/...</code> -> You are using your custom Python 3.12.</li>
+                        <li>If it says <code>/usr/bin/python</code> -> You are using the old system Python (Avoid this!).</li>
+                    </ul>
+                    
+                </section>
+
+                <section id="section-6">
+                    <h2>Part 5: Previewing Your Apps (The "Ports" Tab)</h2>
+                    <p>When you run a Flask app (`python app.py`), you want to see it in your browser.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Do NOT use public domains for development testing.</strong> It exposes your work to the world and requires complex setup.</p>
+                    </div>
+
+                    <h3>The Easy Way (Private Preview)</h3>
+                    <ol>
+                        <li>Run your app in the terminal: <code>python app.py</code></li>
+                        <li>Look at the panel at the bottom of VS Code (where Terminal is).</li>
+                        <li>Click the <strong>PORTS</strong> tab.</li>
+                        <li>You will see Port <code>5000</code> listed there.</li>
+                        <li>Click the <strong>Globe Icon 🌐</strong> next to it.</li>
+                    </ol>
+                    <p>This opens a <strong>secure, private tunnel</strong> to your app. Only you can see it.</p>
+                </section>
+
+                <section id="section-custom-domain">
+                    <h2>Part 6: Advanced Public Previews (Subdomains)</h2>
+                    <p>If you want to share a running app with a friend (e.g., <code>https://5000.code.yourdomain.com</code>) <em>without</em> asking them for a password, or if you want to test custom subdomains, follow this setup.</p>
+                    <p>remove this <code> - PASSWORD=your_secure_login_password</code> if you do not want user to be asked for a password when logging in</p>
+
+                    <h3>1. Enable the Variable</h3>
+                    <p>In your <code>docker-compose.yml</code>, ensure this line is active (uncommented):</p>
+                    <pre><code class="language-yaml">environment:
+  - PROXY_DOMAIN=code.yourdomain.com</code></pre>
+                    <p><em>(Replace with your actual domain).</em></p>
+
+                    <h3>2. Configure DNS</h3>
+                    <p>Go to your DNS provider (Namecheap/Cloudflare) and add a record for the specific port you want to expose (e.g., 5000).</p>
+                    <ul>
+                        <li><strong>Type:</strong> A Record</li>
+                        <li><strong>Host:</strong> <code>5000.code</code> (Results in 5000.code.yourdomain.com)</li>
+                        <li><strong>Value:</strong> Your Server IP</li>
+                    </ul>
+
+                    <h3>3. Configure Nginx Proxy Manager</h3>
+                    <p>This is the trick: You must point the subdomain to <strong>Code-Server (8443)</strong>, NOT the app port (5000). Code-Server handles the internal routing.</p>
+                    <ol>
+                        <li><strong>Add Proxy Host:</strong>
+                            <ul>
+                                <li><strong>Domain Name:</strong> <code>5000.code.yourdomain.com</code></li>
+                                <li><strong>Forward Hostname/IP:</strong> <code>code-server</code></li>
+                                <li><strong>Forward Port:</strong> <code>8443</code> <strong style="color:#d63384">(Keep this as 8443!)</strong></li>
+                                <li><strong>Websockets:</strong> <strong style="color:green">Enabled</strong>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>SSL:</strong> Request Certificate & Force SSL.</li>
+                    </ol>
+                    <p>Now, when you visit <code>https://5000.code.yourdomain.com</code>, Code-Server will see you are requesting port 5000 and automatically route you to your running Python app.</p>
+                </section>
+
+                <section id="section-7">
+                    <h2>Part 7: Deploying to Public (The Real Way)</h2>
+                    <p>When you are ready to share your app with friends without asking for a password, do NOT use VS Code.</p>
+                    <p>Deploy it as a real Docker container.</p>
+
+                    <ol>
+                        <li>Create a `Dockerfile` in your project folder.</li>
+                        <li>Create a new `docker-compose.yml` for your app.</li>
+                        <li>Run it: `docker compose up -d`</li>
+                        <li>Go to Nginx Proxy Manager and point `app.yourdomain.com` to your new container.</li>
+                    </ol>
+                    <p><em>(See the main Docker Guide for full deployment steps).</em></p>
+                </section>
+
+                <section id="section-8">
+                    <h2>Part 8: Decommissioning</h2>
+                    <p>To remove Code-Server completely:</p>
+                     <pre><code class="language-bash"># 1. Remove Proxy Host in NPM.
+
+# 2. Stop and remove containers and data
+cd /root/docker-deployment/code-server
+docker compose down -v
+
+# 3. Remove directory (WARNING: Deletes your code in the workspace folder!)
+cd ..
+rm -rf code-server
+</code></pre>
+                </section>
+
+                <section id="section-permissions">
+                    <h2>Part 9: Troubleshooting Permissions (EACCES Error)</h2>
+                    <p>If you try to move or edit files created by another program (like <strong>FileBrowser</strong>) and get an error saying: <code>Error: EACCES: permission denied</code>, it is because of a user conflict.</p>
+                    <p>FileBrowser usually runs as <strong>Root</strong>, while VS Code runs as a <strong>Standard User</strong>. The Standard User cannot touch the Root's files.</p>
+
+                    <h3>Option A: The Quick Fix (Recommended)</h3>
+                    <p>You can fix this instantly inside the VS Code terminal without restarting anything.</p>
+                    <ol>
+                        <li>Open the terminal in VS Code (Ctrl + `).</li>
+                        <li>Run this command to claim ownership of all files:</li>
+                    </ol>
+                    <pre><code class="language-bash">sudo chown -R abc:abc /config/workspace</code></pre>
+                    <p><em>(Enter your sudo password when prompted).</em></p>
+
+                    <h3>Option B: The "God Mode" Fix (Run as Root)</h3>
+                    <p>If you never want to deal with permissions again, you can force VS Code to run as Root (Administrator). This gives it full access to everything.</p>
+                    <ol>
+                        <li>Edit your <code>docker-compose.yml</code> file.</li>
+                        <li>Change the User IDs to <strong>0</strong>:</li>
+                    </ol>
+                    <pre><code class="language-yaml">    environment:
+      - PUID=0  # 0 = Root User
+      - PGID=0  # 0 = Root Group</code></pre>
+                    <ol start="3">
+                        <li>Restart the container: <code>docker compose up -d</code></li>
+                    </ol>
+
+                    <div class="info-box">
+                        <p><strong>Cleanup Tip:</strong><br>
+                        After switching to Root, your files on the server might still be tagged as "User 1000". While Root can access them fine, it is good practice to update their ownership to match the new setting.
+                        <br><br>
+                        Run this on your VPS terminal:
+                        <br>
+                        <code>chown -R root:root /root/docker-deployment/code-server/config</code>
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-custom-port-sharing">
+                <h2>Part X: Public Sharing (Safe Mode) Using a Separate “Share Port”</h2>
+                <p>
+                    This method keeps your default development ports <code>5000</code> (Flask) and <code>5500</code> (Live Server) PRIVATE.
+                    You will only expose a separate internal “share port” when you want to show your project to a friend.
+                </p>
+
+                <div class="info-box">
+                    <p>
+                        <strong>Our Safe Port Plan (Recommended)</strong><br>
+                        <code>5000</code> = Private Flask (default)<br>
+                        <code>5500</code> = Private Live Server (default)<br>
+                        <code>5001</code> = <strong>Share Internal Port</strong> (only when you want to share)<br>
+                        <code>15555</code> = <strong>Public Test Port</strong> (used in Nginx Proxy Manager)
+                    </p>
+                </div>
+
+                <h3>Step 1: Expose ONLY the Public Test Port (15555) → Share Port (5001)</h3>
+                <p>Edit your <code>code-server</code> <code>docker-compose.yml</code> and add this port mapping.</p>
+
+                <pre><code class="language-yaml">services:
+            code-server:
+                # ...
+                ports:
+                - "8443:8443"         # #comment code-server (password protected)
+                - "15555:5001"        # #comment PUBLIC test port -> internal SHARE port (5001 only)
+            </code></pre>
+
+                <p>Restart the container:</p>
+                <pre><code class="language-bash"># #comment run on VPS
+            cd /root/docker-deployment/code-server
+            docker compose down
+            docker compose up -d</code></pre>
+
+                <div class="info-box">
+                    <p>
+                        <strong>Important:</strong><br>
+                        Your default ports <code>5000</code> and <code>5500</code> are NOT exposed publicly by this setup.<br>
+                        Only whatever runs on <code>5001</code> can be shared.
+                    </p>
+                </div>
+
+                <h3>Step 2: DNS Example (Create a Public Test Subdomain)</h3>
+                <p>Go to your DNS provider (Cloudflare/Namecheap) and create an A record like this:</p>
+                <ul>
+                    <li><strong>Type:</strong> A</li>
+                    <li><strong>Name/Host:</strong> <code>test</code></li>
+                    <li><strong>Value:</strong> Your VPS Public IP</li>
+                    <li><strong>TTL:</strong> Auto</li>
+                </ul>
+                <p>This gives you:</p>
+                <pre><code>test.yourdomain.com</code></pre>
+
+                <h3>Step 3: Nginx Proxy Manager (Point test.yourdomain.com to Port 15555)</h3>
+                <ol>
+                    <li><strong>Add Proxy Host</strong></li>
+                    <li><strong>Domain Names:</strong> <code>test.yourdomain.com</code></li>
+                    <li><strong>Scheme:</strong> <code>http</code></li>
+                    <li><strong>Forward Hostname / IP:</strong> Your VPS IP (example: <code>123.123.123.123</code>)</li>
+                    <li><strong>Forward Port:</strong> <code>15555</code></li>
+                    <li><strong>Websockets:</strong> ON (safe to enable)</li>
+                    <li><strong>SSL Tab:</strong> Request Certificate + Force SSL</li>
+                </ol>
+
+                <p>Now, your friend will open:</p>
+                <pre><code>https://test.yourdomain.com</code></pre>
+
+                <div class="info-box">
+                    <p>
+                        <strong>What will your friend see?</strong><br>
+                        They will see ONLY the app running on the internal share port <code>5001</code>.<br>
+                        If nothing is running on <code>5001</code>, the page will not load.
+                    </p>
+                </div>
+
+                <h3>Step 4A: Sharing a Flask App (Switch from Private 5000 → Share 5001)</h3>
+                <p>
+                    By default, many Flask apps run like this:
+                    <code>app.run(host='0.0.0.0', port=5000)</code> (PRIVATE).
+                    When you want to share, change ONLY the port to <code>5001</code>.
+                </p>
+
+                <p><strong>Find this at the bottom of your Flask file (example: app.py):</strong></p>
+                <pre><code class="language-python"># #comment PRIVATE MODE (default)
+            if __name__ == "__main__":
+                app.run(host="0.0.0.0", port=5000)</code></pre>
+
+                <p><strong>Change to this ONLY when you want to share publicly:</strong></p>
+                <pre><code class="language-python"># #comment SHARE MODE (public via test.yourdomain.com)
+            if __name__ == "__main__":
+                app.run(host="0.0.0.0", port=5001)</code></pre>
+
+                <div class="info-box">
+                    <p>
+                        <strong>Result:</strong><br>
+                        - Private testing stays on <code>5000</code><br>
+                        - Public sharing uses <code>5001</code> → mapped to public port <code>15555</code> → <code>https://test.yourdomain.com</code>
+                    </p>
+                </div>
+
+                <h3>Step 4B: Sharing a Static Website (No Flask) Without Touching Live Server</h3>
+                <p>
+                    If you don’t want to change Live Server settings, you can share your HTML folder using Python’s built-in server on the SHARE port <code>5001</code>.
+                </p>
+                <pre><code class="language-bash"># #comment go to your project folder
+            cd /config/workspace/your-project
+
+            # #comment SHARE MODE: serve this folder on port 5001
+            python3 -m http.server 5001 --bind 0.0.0.0</code></pre>
+
+                <p>Your friend opens:</p>
+                <pre><code>https://test.yourdomain.com</code></pre>
+
+                <p>To stop sharing, press <code>CTRL + C</code> in the terminal.</p>
+
+                <h3>Step 4C: (Optional) If You Want Live Server Itself to Use 5001</h3>
+                <p>
+                    Live Server default is usually <code>5500</code>. If you want Live Server to run on <code>5001</code> (your SHARE port),
+                    you can set it from Remote Settings (recommended in code-server).
+                </p>
+
+                <ol>
+                    <li>Press <code>Ctrl + Shift + P</code></li>
+                    <li>Type: <strong>Preferences: Open Remote Settings (JSON)</strong></li>
+                    <li>Add this setting (example):</li>
+                </ol>
+
+                <pre><code class="language-json">{
+            "liveServer.settings.port": 5001
+            }</code></pre>
+
+                <div class="info-box">
+                    <p>
+                        <strong>How to switch back to Private (disable Live Server sharing)</strong><br>
+                        Open the same Remote Settings JSON and either:
+                        <br>1) Change it back to <code>5500</code>, or
+                        <br>2) Remove the line: <code>"liveServer.settings.port": 5001</code>
+                    </p>
+                </div>
+
+                <h3>Step 5: Disable Public Sharing (Go Back to Private Mode)</h3>
+                <p>When you finish sharing, remove the public route completely:</p>
+                <ol>
+                    <li>In Nginx Proxy Manager: delete the Proxy Host for <code>test.yourdomain.com</code></li>
+                    <li>In DNS: optionally delete the A record <code>test</code></li>
+                    <li>In docker-compose.yml: remove the mapping line <code>"15555:5001"</code></li>
+                    <li>Restart:</li>
+                </ol>
+
+                <pre><code class="language-bash"># #comment apply changes
+            cd /root/docker-deployment/code-server
+            docker compose up -d</code></pre>
+
+                <div class="error-box">
+                    <p>
+                        <strong>Security Warning:</strong><br>
+                        Anything exposed via <code>test.yourdomain.com</code> is public to anyone who has the link.
+                        Only enable sharing when needed, and disable it when done.
+                    </p>
+                </div>
+            </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>
