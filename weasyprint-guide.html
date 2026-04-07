@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: WeasyPrint Setup for HTML-to-PDF Generation</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .content-card { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.7rem; }
+        }
+        /* --- TROUBLESHOOTING TABLE --- */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 1.05rem; }
+        th, td { padding: 0.75rem 1rem; border: 1px solid var(--border-color); text-align: left; }
+        th { background-color: var(--toc-bg); color: var(--heading-color); font-weight: 600; }
+        td { background-color: var(--main-bg-color); }
+        [data-theme="dark"] th { background-color: var(--toc-bg); }
+        [data-theme="dark"] td { background-color: var(--code-bg); }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4><a href="index.html">Home</a> / WeasyPrint Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>&#9728;&#65039;</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>&#127769;</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>WeasyPrint Setup Guide</h1>
+                    <p>HTML-to-PDF Generation for Flask Apps (Docker & Windows)</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">What is WeasyPrint?</a></li>
+                        <li><a href="#section-2">Why It Needs System Libraries</a></li>
+                        <li><a href="#section-3">Setup for Docker (Production)</a></li>
+                        <li><a href="#section-4">Setup for Local Development (Windows)</a></li>
+                        <li><a href="#section-5">Usage in Code</a></li>
+                        <li><a href="#section-6">Template Tips</a></li>
+                        <li><a href="#section-7">Troubleshooting</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>What is WeasyPrint?</h2>
+                    <p>WeasyPrint converts HTML/CSS templates into PDF files. It's used to generate downloadable PDFs — such as payment link pages with QR codes — directly from your Flask app.</p>
+
+                    <h3>How it Works</h3>
+                    <ol>
+                        <li>You write an HTML template with CSS (like a web page)</li>
+                        <li>WeasyPrint renders it as a PDF — no browser needed</li>
+                        <li>Images (QR codes, logos) are embedded as base64 data URIs since WeasyPrint doesn't have access to your web server</li>
+                    </ol>
+                </section>
+
+                <section id="section-2">
+                    <h2>Why It Needs System Libraries</h2>
+                    <p>WeasyPrint is <strong>NOT</strong> a pure Python package. It depends on native C libraries for rendering:</p>
+                    <ul>
+                        <li><strong>libpango</strong> — text layout and font rendering</li>
+                        <li><strong>libcairo</strong> — 2D graphics and PDF drawing</li>
+                        <li><strong>libgdk-pixbuf</strong> — image loading (PNG, JPEG, etc.)</li>
+                        <li><strong>libgobject</strong> — object system used by all the above</li>
+                    </ul>
+                    <div class="info-box">
+                        <p><strong>Important:</strong> These must be installed at the OS level — <code>pip install weasyprint</code> alone is <strong>not enough</strong>.</p>
+                    </div>
+                </section>
+
+                <section id="section-3">
+                    <h2>Setup for Docker (Production)</h2>
+                    <p>In Docker, you install the system libraries directly in your Dockerfile. This is the simplest setup.</p>
+
+                    <h3>Step 1: Update Your Dockerfile</h3>
+                    <p>Add the system libraries to your existing <code>RUN apt-get</code> line:</p>
+                    <pre><code class="language-dockerfile">RUN apt-get update && apt-get install -y curl libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libffi-dev libcairo2 && rm -rf /var/lib/apt/lists/*</code></pre>
+
+                    <div class="info-box" style="border-color: #dc3545;">
+                        <p><strong>Debian Trixie (Python 3.12-slim) Warning:</strong> The package is <code>libgdk-pixbuf-2.0-0</code> (with hyphens), <strong>NOT</strong> <code>libgdk-pixbuf2.0-0</code> (the old name). If you get "Package has no installation candidate", check the hyphens.</p>
+                    </div>
+
+                    <h3>Step 2: Update requirements.txt</h3>
+                    <p>Add WeasyPrint to your Python dependencies:</p>
+                    <pre><code class="language-text">weasyprint</code></pre>
+
+                    <h3>Step 3: Rebuild the Container</h3>
+                    <pre><code class="language-bash">docker compose down && docker compose up --build -d</code></pre>
+                    <p>That's it for Docker. The container has everything it needs.</p>
+                </section>
+
+                <section id="section-4">
+                    <h2>Setup for Local Development (Windows)</h2>
+                    <p>WeasyPrint needs the same native libraries on Windows. You install them via <strong>MSYS2</strong>.</p>
+
+                    <h3>Step 1: Install MSYS2</h3>
+                    <ol>
+                        <li>Download from <a href="https://www.msys2.org/" target="_blank">https://www.msys2.org/</a></li>
+                        <li>Run the installer, keep all default options</li>
+                        <li>It installs to <code>C:\msys64</code></li>
+                    </ol>
+
+                    <h3>Step 2: Install GTK Libraries</h3>
+                    <p>Open <strong>MSYS2 UCRT64</strong> terminal (search "MSYS2 UCRT64" in Start menu — must be the <strong>UCRT64</strong> one) and run:</p>
+                    <pre><code class="language-bash">pacman -S mingw-w64-ucrt-x86_64-gtk3</code></pre>
+                    <p>This installs GTK3 with <strong>ALL</strong> dependencies (pango, cairo, gdk-pixbuf, gobject, etc.). Close the MSYS2 terminal when done.</p>
+
+                    <h3>Step 3: Add to Windows PATH</h3>
+                    <ol>
+                        <li>Windows Search &rarr; "Edit the system environment variables"</li>
+                        <li>Click <strong>Environment Variables</strong></li>
+                        <li>Under <strong>System variables</strong>, find <code>Path</code>, click <strong>Edit</strong></li>
+                        <li>Click <strong>New</strong> &rarr; type: <code>C:\msys64\ucrt64\bin</code></li>
+                        <li>Click <strong>OK</strong> on all dialogs</li>
+                    </ol>
+
+                    <h3>Step 4: Add DLL Directory in Python</h3>
+                    <p>Since Python 3.8+, Windows PATH alone is <strong>NOT enough</strong> for loading native DLLs. You must explicitly register the directory in your Python code. Add this near the top of <code>app.py</code> (before any weasyprint import):</p>
+                    <pre><code class="language-python">import sys
+import os
+
+if sys.platform == 'win32':
+    msys2_bin = os.path.join('C:', os.sep, 'msys64', 'ucrt64', 'bin')
+    if os.path.isdir(msys2_bin):
+        os.add_dll_directory(msys2_bin)</code></pre>
+                    <div class="info-box">
+                        <p><strong>Note:</strong> This only runs on Windows — Docker/Linux ignores it completely.</p>
+                    </div>
+
+                    <h3>Step 5: Install the Python Package</h3>
+                    <pre><code class="language-bash">pip install weasyprint</code></pre>
+
+                    <h3>Step 6: Restart VS Code</h3>
+                    <p>Restart VS Code <strong>completely</strong> (close and reopen — not just the terminal) so it picks up the new PATH entry.</p>
+                </section>
+
+                <section id="section-5">
+                    <h2>Usage in Code</h2>
+                    <p>Here's how to use WeasyPrint in a Flask route to generate and return a PDF:</p>
+                    <pre><code class="language-python"># Lazy import inside the route (avoids slowing down app startup)
+import weasyprint
+
+# Render HTML template to string
+html_string = render_template('my_pdf_template.html', title='Hello', amount='5,000')
+
+# Convert to PDF bytes
+pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
+
+# Return as downloadable file
+return Response(pdf_bytes, mimetype='application/pdf',
+                headers={'Content-Disposition': 'attachment; filename="file.pdf"'})</code></pre>
+                </section>
+
+                <section id="section-6">
+                    <h2>Template Tips</h2>
+                    <p>WeasyPrint has some key differences from rendering HTML in a browser:</p>
+                    <ul>
+                        <li><strong>No JavaScript</strong> — WeasyPrint renders HTML/CSS only</li>
+                        <li><strong>Page size control</strong> — Use <code>@page { size: A4; margin: 0; }</code> to control page dimensions</li>
+                        <li><strong>No external images</strong> — URLs won't load; embed images as <strong>base64 data URIs</strong></li>
+                        <li><strong>No Google Fonts</strong> — Use system fonts (<code>Arial</code>, <code>Helvetica</code>, <code>sans-serif</code>)</li>
+                        <li><strong>Use mm units</strong> — For precise print layouts (e.g., <code>padding: 10mm;</code>)</li>
+                    </ul>
+                </section>
+
+                <section id="section-7">
+                    <h2>Troubleshooting</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Problem</th>
+                                <th>Cause</th>
+                                <th>Fix</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>cannot load library libgobject</code></td>
+                                <td>Missing system libs or DLL directory not registered</td>
+                                <td>Install MSYS2 + GTK3, add <code>os.add_dll_directory()</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>Package libgdk-pixbuf2.0-0 has no installation candidate</code></td>
+                                <td>Debian Trixie renamed the package</td>
+                                <td>Use <code>libgdk-pixbuf-2.0-0</code> (with hyphens)</td>
+                            </tr>
+                            <tr>
+                                <td>Images missing in PDF</td>
+                                <td>WeasyPrint can't fetch from localhost</td>
+                                <td>Embed images as base64 data URIs</td>
+                            </tr>
+                            <tr>
+                                <td>Fonts look different</td>
+                                <td>Google Fonts not available</td>
+                                <td>Use system fonts in CSS</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('pre').forEach(pre => {
+                const code = pre.querySelector('code');
+                if (code) {
+                    const button = document.createElement('button');
+                    button.innerText = 'Copy';
+                    button.className = 'copy-button';
+                    pre.appendChild(button);
+                    button.addEventListener('click', () => {
+                        navigator.clipboard.writeText(code.innerText).then(() => {
+                            button.innerText = 'Copied!';
+                            setTimeout(() => { button.innerText = 'Copy'; }, 2000);
+                        });
+                    });
+                }
+            });
+
+            const themeToggle = document.getElementById('checkbox');
+            const currentTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                themeToggle.checked = theme === 'dark';
+            };
+            if (currentTheme) { applyTheme(currentTheme); }
+            else if (prefersDark) { applyTheme('dark'); }
+            themeToggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: DNS Resolution Fix for Docker & API Connectivity</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .content-card { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4><a href="index.html">Home</a> / DNS Fix Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>&#9728;&#65039;</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>&#127769;</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>DNS Resolution Fix for Docker & API Connectivity</h1>
+                    <p>Fixing Docker Build Timeouts and Outgoing API Failures on Your VPS</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">The Problem</a></li>
+                        <li><a href="#section-2">The Root Cause</a></li>
+                        <li><a href="#section-3">The Fix: Switch to Cloudflare DNS</a></li>
+                        <li><a href="#section-4">Making It Permanent</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>The Problem</h2>
+                    <p>You may encounter one or both of these issues on your VPS:</p>
+                    <ul>
+                        <li><strong>Docker builds fail</strong> with the error: <code>dial tcp: lookup registry-1.docker.io: i/o timeout</code></li>
+                        <li><strong>Outgoing API calls</strong> (e.g., to payment gateways like ClickPesa) intermittently fail with <code>"unable to complete request"</code></li>
+                    </ul>
+                    <p>Both symptoms point to the same underlying issue: the server cannot reliably resolve domain names to IP addresses.</p>
+                </section>
+
+                <section id="section-2">
+                    <h2>The Root Cause</h2>
+                    <p>The default DNS resolver on most Ubuntu VPS instances is <strong>systemd-resolved</strong>, which listens at <code>127.0.0.53</code>. When this local resolver is misconfigured or unresponsive, any process that needs to look up a domain name (Docker pulling images, your Flask app calling an external API) will time out or fail.</p>
+                    <div class="info-box">
+                        <p><strong>How to confirm this is your issue:</strong> Check what DNS server your system is currently using. If it shows <code>127.0.0.53</code> and you're experiencing the errors above, this is the problem.</p>
+                    </div>
+                    <pre><code class="language-bash"># Check current DNS configuration
+cat /etc/resolv.conf</code></pre>
+                    <p>If the output shows <code>nameserver 127.0.0.53</code>, that's the local systemd-resolved stub — and it's the source of your issues.</p>
+                </section>
+
+                <section id="section-3">
+                    <h2>The Fix: Switch to Cloudflare DNS</h2>
+                    <p>The solution is to bypass the broken local resolver and point your server directly at a fast, reliable public DNS. Cloudflare's <code>1.1.1.1</code> is the fastest public DNS available.</p>
+
+                    <h3>Step 1: Switch DNS to Cloudflare</h3>
+                    <pre><code class="language-bash"># Switch to Cloudflare DNS (fastest public DNS)
+echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf</code></pre>
+
+                    <div class="info-box">
+                        <p><strong>Alternative:</strong> If you prefer Google's DNS instead, use <code>8.8.8.8</code>:</p>
+                    </div>
+                    <pre><code class="language-bash"># Alternative: Google DNS
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf</code></pre>
+
+                    <h3>Step 2: Verify the Change</h3>
+                    <pre><code class="language-bash"># Verify the change
+cat /etc/resolv.conf</code></pre>
+                    <p>You should now see <code>nameserver 1.1.1.1</code> (or <code>8.8.8.8</code>) in the output.</p>
+
+                    <h3>Step 3: Rebuild and Restart Your Containers</h3>
+                    <p>With DNS now working, rebuild your Docker containers:</p>
+                    <pre><code class="language-bash"># Rebuild and restart containers
+docker compose up --build -d</code></pre>
+                    <p>Docker should now be able to pull images and your API calls should resolve correctly.</p>
+                </section>
+
+                <section id="section-4">
+                    <h2>Making It Permanent</h2>
+                    <p>The change above will <strong>revert after a reboot</strong> if systemd-resolved is still active — it will overwrite <code>/etc/resolv.conf</code> on startup. To make the fix permanent, you need to disable systemd-resolved entirely.</p>
+
+                    <h3>Step 1: Disable and Stop systemd-resolved</h3>
+                    <pre><code class="language-bash"># Disable systemd-resolved so it doesn't start on boot
+sudo systemctl disable systemd-resolved
+
+# Stop the currently running service
+sudo systemctl stop systemd-resolved</code></pre>
+
+                    <h3>Step 2: Set Permanent DNS</h3>
+                    <pre><code class="language-bash"># Set permanent DNS
+echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf</code></pre>
+
+                    <div class="info-box">
+                        <p><strong>That's it!</strong> With systemd-resolved disabled and <code>/etc/resolv.conf</code> pointing to Cloudflare, your DNS will survive reboots and your Docker builds and API calls will work reliably.</p>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('pre').forEach(pre => {
+                const code = pre.querySelector('code');
+                if (code) {
+                    const button = document.createElement('button');
+                    button.innerText = 'Copy';
+                    button.className = 'copy-button';
+                    pre.appendChild(button);
+                    button.addEventListener('click', () => {
+                        navigator.clipboard.writeText(code.innerText).then(() => {
+                            button.innerText = 'Copied!';
+                            setTimeout(() => { button.innerText = 'Copy'; }, 2000);
+                        });
+                    });
+                }
+            });
+
+            const themeToggle = document.getElementById('checkbox');
+            const currentTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                themeToggle.checked = theme === 'dark';
+            };
+            if (currentTheme) { applyTheme(currentTheme); }
+            else if (prefersDark) { applyTheme('dark'); }
+            themeToggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+        });
+    </script>
+</body>
+</html>
