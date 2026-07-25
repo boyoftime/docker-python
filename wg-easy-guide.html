@@ -1,5 +1,3 @@
---- START OF FILE wg-easy-guide.html ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,25 +119,23 @@ cd /root/docker-deployment/wg-easy
                     <!-- OPTION A -->
                     <div class="version-choice">
                         <span class="version-badge">OPTION A: LATEST VERSION (v15+) - RECOMMENDED</span>
-                        <p>This config uses the new <code>SERVER_PUBLIC_URL</code> variables. Data is stored <strong>locally in this folder</strong>.</p>
+                        <p>v15 configures almost everything through a <strong>first-run web setup wizard</strong> instead of environment variables. To skip that wizard and pre-fill it non-interactively (useful for scripted deployments), v15 supports a distinct set of <code>INIT_*</code> variables &mdash; these only apply on the very first container start. Data is stored <strong>locally in this folder</strong>.</p>
                         <pre><code class="language-yaml">services:
   wg-easy:
     # Uses the new official image repository
     image: ghcr.io/wg-easy/wg-easy:15
     container_name: wg-easy
     environment:
-      # --- REQUIRED VARIABLES (New Format) ---
-      # 1. Public IP or Domain
-      - SERVER_PUBLIC_URL=https://YOUR_IP_OR_DOMAIN
-      
-      # 2. Web UI Password
-      - ADMIN_PASSWORD=YOUR_STRONG_PASSWORD
-      
-      # --- CONFIGURATION ---
-      - PORT=51821
-      - WG_PORT=51820
-      - DNS=1.1.1.1,1.0.0.1
-      
+      # --- UNATTENDED SETUP (only read on first boot) ---
+      - INIT_ENABLED=true
+      - INIT_USERNAME=admin
+      - INIT_PASSWORD=YOUR_STRONG_PASSWORD
+      - INIT_HOST=YOUR_IP_OR_DOMAIN
+      - INIT_PORT=51820
+      - INIT_DNS=1.1.1.1,1.0.0.1
+      - INIT_IPV4_CIDR=10.8.0.0/24
+      - INIT_IPV6_CIDR=fd00:0::/64
+
     volumes:
       # Stores config files IN THIS DIRECTORY (as requested)
       - .:/etc/wireguard
@@ -168,22 +164,41 @@ networks:
   nginx-proxy:
     external: true
 </code></pre>
+                        <div class="info-box" style="margin-top: 1rem;">
+                            <p><strong>Security note:</strong> <code>INIT_*</code> variables are only read once, on first startup. After you've confirmed login works, remove these lines from the file entirely &mdash; leaving <code>INIT_PASSWORD</code> sitting in plain text serves no purpose once setup is done, and only adds needless exposure.</p>
+                            <p><strong>IPv4/IPv6 CIDR pairing:</strong> <code>INIT_IPV4_CIDR</code> and <code>INIT_IPV6_CIDR</code> are a linked pair &mdash; if you set one, you must set both, or the container will fail validation.</p>
+                        </div>
                     </div>
 
                     <!-- OPTION B -->
                     <div class="version-choice">
-                        <span class="version-badge" style="background-color: #6c757d;">OPTION B: LEGACY VERSION (WeeJewel)</span>
-                        <p>Use this if you prefer the legacy setup (old variable names).</p>
+                        <span class="version-badge" style="background-color: #6c757d;">OPTION B: STABLE VERSION (v14)</span>
+                        <p>Use this if you want the older, simpler env-var setup instead of v15's setup wizard. This uses the <strong>maintained</strong> v14 release.</p>
+                        <div class="error-box">
+                            <p><strong>Don't use the <code>weejewel/wg-easy</code> image.</strong> That was the original Docker Hub repository, but the project has officially moved: Docker Hub's own page for it now reads <em>"Moved to GitHub Container Registry &mdash; the new Docker URL is now ghcr.io/wg-easy/wg-easy."</em> It's no longer maintained. Use <code>ghcr.io/wg-easy/wg-easy:14</code> below instead.</p>
+                        </div>
+
+                        <h4>Step B1: Generate a bcrypt password hash</h4>
+                        <p>v14 requires the Web UI password as a bcrypt <strong>hash</strong>, not plain text. Generate it with wg-easy's own image (run this on your VPS, in the same folder):</p>
+                        <pre><code class="language-bash">docker run --rm -it ghcr.io/wg-easy/wg-easy:14 wgpw 'YOUR_STRONG_PASSWORD'</code></pre>
+                        <p>This prints something like:</p>
+                        <pre><code class="language-text">PASSWORD_HASH='$2a$12$abcdefghijklmnopqrstuv.wxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'</code></pre>
+                        <div class="info-box">
+                            <p><strong>Escaping <code>$</code> for docker-compose:</strong> Copy the hash, but before pasting it into <code>docker-compose.yml</code>, replace every single <code>$</code> with <code>$$</code>. Compose treats a lone <code>$</code> as the start of a variable reference and will silently strip it otherwise &mdash; the same issue that affects any password containing a literal <code>$</code> character.</p>
+                            <p>So <code>$2a$12$abc...</code> becomes <code>$$2a$$12$$abc...</code> in the file below.</p>
+                        </div>
+
+                        <h4>Step B2: The compose file</h4>
                         <pre><code class="language-yaml">services:
   wg-easy:
-    # Uses the original legacy image
-    image: weejewel/wg-easy:latest
+    # The maintained v14 release
+    image: ghcr.io/wg-easy/wg-easy:14
     container_name: wg-easy
     environment:
       # --- REQUIRED VARIABLES ---
       - WG_HOST=YOUR_SERVER_IP
-      - PASSWORD=YOUR_STRONG_PASSWORD
-      
+      - PASSWORD_HASH=YOUR_ESCAPED_BCRYPT_HASH
+
       # --- CONFIGURATION ---
       - WG_PORT=51820
       - WG_DEFAULT_DNS=1.1.1.1,1.0.0.1
@@ -227,6 +242,25 @@ rm /root/docker-deployment/wg-easy/wg0.json</code></pre>
                     <pre><code class="language-bash">cd /root/docker-deployment/wg-easy
 docker compose up -d
 </code></pre>
+
+                    <div class="error-box">
+                        <p><strong>⚠️ v15 only: "Invalid username or password" even though it's correct</strong></p>
+                        <p><code>INIT_*</code> variables are only read on the <strong>very first</strong> container start against an empty data folder. If you change <code>INIT_USERNAME</code> or <code>INIT_PASSWORD</code> in the file afterward and run <code>docker compose up -d</code> or <code>--force-recreate</code> again, those changes are silently ignored &mdash; the logs will show <code>Database Setting up already done. Skiping initial setup.</code> instead of actually creating a new user. Recreating the <em>container</em> doesn't help, because the "setup complete" flag lives in the persisted data folder, not inside the container itself.</p>
+                        <p><strong>The fix is to wipe the data folder and start fresh exactly once</strong>, with your final values already correct in the file before that first start:</p>
+                        <pre><code class="language-bash">cd /root/docker-deployment/wg-easy
+docker compose down
+cd ..
+rm -rf wg-easy
+mkdir wg-easy
+cd wg-easy
+nano docker-compose.yml
+# Paste your compose file with the FINAL values you want, then save.
+docker compose up -d
+</code></pre>
+                        <p>Confirm it actually applied this time by checking the logs immediately after:</p>
+                        <pre><code class="language-bash">docker compose logs</code></pre>
+                        <p>You want to see lines like <code>Creating initial user...</code> and <code>Setting initial host and port...</code> &mdash; not <code>Setup already done</code>. Once you see the right lines, don't run <code>up</code> or <code>--force-recreate</code> again unless you intend to wipe the folder once more; any password changes after this point need the same wipe-and-restart process.</p>
+                    </div>
                 </section>
 
                 <section id="section-2">
@@ -234,7 +268,7 @@ docker compose up -d
                     <ol>
                         <li>Access the UI by navigating to <code>http://YOUR_SERVER_IP:51821</code> in your browser.</li>
                         <li>Log in with the password you set in the config file.</li>
-                        <li>Click the **"+ New Client"** button to create your first VPN user.</li>
+                        <li>Click the <strong>"+ New Client"</strong> button to create your first VPN user.</li>
                         <li>To connect a device, use one of the icons:
                             <ul>
                                 <li><strong>QR Code Icon:</strong> Best for mobile phones. Scan it with the WireGuard app.</li>
@@ -242,6 +276,10 @@ docker compose up -d
                             </ul>
                         </li>
                     </ol>
+                    <div class="error-box">
+                        <p><strong>v15 only: "You can't log in with an insecure connection. Use HTTPS."</strong></p>
+                        <p>Unlike v14, v15 refuses to log in at all over plain <code>http://</code> &mdash; even for local testing directly against the IP and port. If you're just testing before setting up Nginx Proxy Manager (Part 5), add <code>INSECURE=true</code> to the <code>environment:</code> block and run <code>docker compose up -d --force-recreate</code>. Treat this as temporary: once you're accessing the panel through NPM over real HTTPS, remove <code>INSECURE=true</code> again.</p>
+                    </div>
                 </section>
                 
                 <section id="section-3">
@@ -251,7 +289,7 @@ docker compose up -d
                     <div class="info-box">
                         <p><strong>Important: Setting the Correct VPN Endpoint</strong></p>
                         <p>
-                            The <code>Endpoint = ...</code> line in your client config files is automatically generated from the <strong><code>SERVER_PUBLIC_URL</code></strong> (or <code>WG_HOST</code>) variable.
+                            The <code>Endpoint = ...</code> line in your client config files is automatically generated from whichever host value you set &mdash; <strong><code>INIT_HOST</code></strong> on v15 (only on first boot; changeable afterward in Settings), or <code>WG_HOST</code> on v14.
                         </p>
                         <p>
                             The domain you use for the Web UI (via Nginx Proxy Manager) <strong>CANNOT</strong> be used for the VPN endpoint unless you open UDP ports on that specific domain.
@@ -296,6 +334,9 @@ rm -rf wg-easy
                         </li>
                         <li><strong>SSL Tab:</strong> Request a new SSL certificate and turn on "Force SSL".</li>
                     </ol>
+                    <div class="info-box">
+                        <p><strong>v15 users:</strong> once you're logging in through your NPM domain over real HTTPS, remove the temporary <code>INSECURE=true</code> line from Part 1 and recreate the container (<code>docker compose up -d --force-recreate</code>) &mdash; it's no longer needed and shouldn't be left on permanently.</p>
+                    </div>
                 </section>
             </div>
         </main>
