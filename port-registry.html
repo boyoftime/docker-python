@@ -193,6 +193,13 @@
                                 <td>Only open if exposing DB to external tools.</td>
                             </tr>
                             <tr>
+                                <td><strong>PostgreSQL (Optional)</strong></td>
+                                <td><code>5432</code></td>
+                                <td>5432</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Only open if exposing DB to external tools.</td>
+                            </tr>
+                            <tr>
                                 <td><strong>WireGuard VPN</strong></td>
                                 <td><code>51820</code></td>
                                 <td>51820</td>
@@ -244,6 +251,13 @@
                                 <td>80</td>
                                 <td><span class="badge badge-tcp">TCP</span></td>
                                 <td>Database management GUI.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>pgAdmin</strong></td>
+                                <td><code>8083</code></td>
+                                <td>80</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>PostgreSQL management GUI.</td>
                             </tr>
                             <tr>
                                 <td><strong>Stirling-PDF</strong></td>
@@ -300,6 +314,13 @@
                                 <td>3000</td>
                                 <td><span class="badge badge-tcp">HTTPS</span></td>
                                 <td>NPM securely forwards domain traffic to this internal HTTPS port.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3X-UI Panel</strong></td>
+                                <td><code>2053</code></td>
+                                <td>2053</td>
+                                <td><span class="badge badge-tcp">TCP</span></td>
+                                <td>Xray/VPN admin panel (host network mode). Close to public once NPM forwards domain traffic to it.</td>
                             </tr>
                         </tbody>
                     </table>

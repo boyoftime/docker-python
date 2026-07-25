@@ -59,6 +59,10 @@
         input:checked + .slider:before { transform: translateX(24px); }
         .slider.round { border-radius: 24px; }
         .slider.round:before { border-radius: 50%; }
+        .badge { display: inline-block; padding: 0.3em 0.7em; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .badge-optional { background-color: #6c757d; color: #fff; }
+        .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background-color: var(--heading-color); color: #fff; font-weight: bold; font-size: 1rem; margin-right: 0.6rem; flex-shrink: 0; }
+        .step-title { display: flex; align-items: center; }
         @media (max-width: 768px) {
             .container { padding: 1rem; }
             .content-card { padding: 1.5rem; }
@@ -86,7 +90,7 @@
             <div class="content-card">
                 <header style="text-align:center; margin-bottom: 3rem;">
                     <h1>DNS Resolution Fix for Docker & API Connectivity</h1>
-                    <p>Fixing Docker Build Timeouts and Outgoing API Failures on Your VPS</p>
+                    <p>Permanently switching to Cloudflare DNS — the correct way</p>
                 </header>
 
                 <nav class="toc">
@@ -94,8 +98,10 @@
                     <ul>
                         <li><a href="#section-1">The Problem</a></li>
                         <li><a href="#section-2">The Root Cause</a></li>
-                        <li><a href="#section-3">The Fix: Switch to Cloudflare DNS</a></li>
-                        <li><a href="#section-4">Making It Permanent</a></li>
+                        <li><a href="#section-3">Step 1: Set Cloudflare DNS Globally</a></li>
+                        <li><a href="#section-4">Step 2: Check for a Provider-Locked DNS Override</a></li>
+                        <li><a href="#section-5">Step 3: Confirm It's Actually Working</a></li>
+                        <li><a href="#section-6">Optional: Reverting to Default DNS</a></li>
                     </ul>
                 </nav>
 
@@ -111,59 +117,69 @@
 
                 <section id="section-2">
                     <h2>The Root Cause</h2>
-                    <p>The default DNS resolver on most Ubuntu VPS instances is <strong>systemd-resolved</strong>, which listens at <code>127.0.0.53</code>. When this local resolver is misconfigured or unresponsive, any process that needs to look up a domain name (Docker pulling images, your Flask app calling an external API) will time out or fail.</p>
+                    <p>The default DNS resolver on most Ubuntu VPS instances is <strong>systemd-resolved</strong>, which listens locally at <code>127.0.0.53</code>. When its upstream DNS is slow or unreliable, anything needing to look up a domain (Docker pulling images, your Flask app calling an external API) will time out or fail.</p>
                     <div class="info-box">
-                        <p><strong>How to confirm this is your issue:</strong> Check what DNS server your system is currently using. If it shows <code>127.0.0.53</code> and you're experiencing the errors above, this is the problem.</p>
+                        <p><strong>How to confirm this is your issue:</strong></p>
+                        <pre><code class="language-bash">cat /etc/resolv.conf</code></pre>
+                        <p>You'll always see <code>nameserver 127.0.0.53</code> here &mdash; that's normal and expected, this file never changes even after the fix below. It only tells programs "ask the local stub," not what the stub forwards to. Don't judge success or failure by this file; Step 3 shows you the real check.</p>
                     </div>
-                    <pre><code class="language-bash"># Check current DNS configuration
-cat /etc/resolv.conf</code></pre>
-                    <p>If the output shows <code>nameserver 127.0.0.53</code>, that's the local systemd-resolved stub — and it's the source of your issues.</p>
                 </section>
 
                 <section id="section-3">
-                    <h2>The Fix: Switch to Cloudflare DNS</h2>
-                    <p>The solution is to bypass the broken local resolver and point your server directly at a fast, reliable public DNS. Cloudflare's <code>1.1.1.1</code> is the fastest public DNS available.</p>
-
-                    <h3>Step 1: Switch DNS to Cloudflare</h3>
-                    <pre><code class="language-bash"># Switch to Cloudflare DNS (fastest public DNS)
-echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf</code></pre>
-
-                    <div class="info-box">
-                        <p><strong>Alternative:</strong> If you prefer Google's DNS instead, use <code>8.8.8.8</code>:</p>
-                    </div>
-                    <pre><code class="language-bash"># Alternative: Google DNS
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf</code></pre>
-
-                    <h3>Step 2: Verify the Change</h3>
-                    <pre><code class="language-bash"># Verify the change
-cat /etc/resolv.conf</code></pre>
-                    <p>You should now see <code>nameserver 1.1.1.1</code> (or <code>8.8.8.8</code>) in the output.</p>
-
-                    <h3>Step 3: Rebuild and Restart Your Containers</h3>
-                    <p>With DNS now working, rebuild your Docker containers:</p>
-                    <pre><code class="language-bash"># Rebuild and restart containers
-docker compose up --build -d</code></pre>
-                    <p>Docker should now be able to pull images and your API calls should resolve correctly.</p>
+                    <h2>Step 1: Set Cloudflare DNS Globally</h2>
+                    <p>This creates a small config override telling <code>systemd-resolved</code> to use Cloudflare as its upstream DNS, then restarts it. Nothing to disable, nothing that reverts on reboot.</p>
+                    <p>Copy and paste this whole block into your VPS's SSH terminal:</p>
+                    <pre><code class="language-bash">sudo mkdir -p /etc/systemd/resolved.conf.d && sudo tee /etc/systemd/resolved.conf.d/dns-override.conf > /dev/null << 'EOF'
+[Resolve]
+DNS=1.1.1.1 1.0.0.1
+FallbackDNS=8.8.8.8 8.8.4.4
+EOF
+sudo systemctl restart systemd-resolved</code></pre>
+                    <p>If you rely on Docker for builds or outgoing API calls, rebuild your containers once DNS is fixed so they pick up working resolution:</p>
+                    <pre><code class="language-bash">docker compose up --build -d</code></pre>
                 </section>
 
                 <section id="section-4">
-                    <h2>Making It Permanent</h2>
-                    <p>The change above will <strong>revert after a reboot</strong> if systemd-resolved is still active — it will overwrite <code>/etc/resolv.conf</code> on startup. To make the fix permanent, you need to disable systemd-resolved entirely.</p>
+                    <h2>Step 2: Check for a Provider-Locked DNS Override</h2>
+                    <p>Some VPS providers hardcode their own DNS servers directly into your network config. If they do, that setting wins over the global Cloudflare setting from Step 1 &mdash; so it's worth a 10-second check.</p>
 
-                    <h3>Step 1: Disable and Stop systemd-resolved</h3>
-                    <pre><code class="language-bash"># Disable systemd-resolved so it doesn't start on boot
-sudo systemctl disable systemd-resolved
+                    <div class="step-title"><span class="step-num">1</span><strong>Look at your netplan file:</strong></div>
+                    <pre><code class="language-bash">cat /etc/netplan/*.yaml</code></pre>
+                    <p>If you see a block like this, with real IP addresses under <code>nameservers</code>, your provider has locked in their own DNS:</p>
+                    <pre><code class="language-yaml">nameservers:
+  addresses:
+  - 195.179.224.53
+  - 209.126.15.53</code></pre>
 
-# Stop the currently running service
-sudo systemctl stop systemd-resolved</code></pre>
-
-                    <h3>Step 2: Set Permanent DNS</h3>
-                    <pre><code class="language-bash"># Set permanent DNS
-echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf</code></pre>
-
+                    <div class="step-title"><span class="step-num">2</span><strong>Replace those two IPs with Cloudflare's:</strong></div>
+                    <p>Swap <code>195.179.224.53</code> and <code>209.126.15.53</code> below for whatever two IPs you actually saw in your file, then run:</p>
+                    <pre><code class="language-bash">sudo sed -i 's/195.179.224.53/1.1.1.1/; s/209.126.15.53/1.0.0.1/' /etc/netplan/*.yaml
+sudo netplan apply</code></pre>
                     <div class="info-box">
-                        <p><strong>That's it!</strong> With systemd-resolved disabled and <code>/etc/resolv.conf</code> pointing to Cloudflare, your DNS will survive reboots and your Docker builds and API calls will work reliably.</p>
+                        <p><strong>If you didn't see any hardcoded IPs in Step 1</strong>, your provider isn't overriding anything &mdash; skip this step entirely and go straight to Step 3.</p>
                     </div>
+                </section>
+
+                <section id="section-5">
+                    <h2>Step 3: Confirm It's Actually Working</h2>
+                    <p>Check which DNS server is genuinely in use:</p>
+                    <pre><code class="language-bash">resolvectl status</code></pre>
+                    <p>Look for <code>Current DNS Server: 1.1.1.1</code> near the top, under <code>Global</code>.</p>
+                    <p>Then do a live lookup through the normal system path:</p>
+                    <pre><code class="language-bash">dig google.com</code></pre>
+                    <p>Compare the IPs in the <code>ANSWER SECTION</code> against a direct Cloudflare query:</p>
+                    <pre><code class="language-bash">dig @1.1.1.1 google.com +short</code></pre>
+                    <p>If both return matching/fresh results (not old, stale-looking answers), Cloudflare is genuinely handling your DNS now &mdash; not just configured and ignored.</p>
+                </section>
+
+                <section id="section-6">
+                    <span class="badge badge-optional">Optional &mdash; only if you need to undo this</span>
+                    <h2>Reverting to Default DNS</h2>
+                    <p>To undo Step 1 (the global override):</p>
+                    <pre><code class="language-bash">sudo rm -f /etc/systemd/resolved.conf.d/dns-override.conf
+sudo systemctl restart systemd-resolved</code></pre>
+                    <p>To undo Step 2 (if you changed your netplan file), just edit <code>/etc/netplan/*.yaml</code> again and put the original provider IPs back under <code>nameservers</code>, then run <code>sudo netplan apply</code>.</p>
+                    <p>Run <code>resolvectl status</code> afterward to confirm you're back to the original DNS servers.</p>
                 </section>
 
             </div>
