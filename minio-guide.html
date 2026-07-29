@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide: Setting Up MinIO - Your Own File Storage for Flask Apps</title>
+
+    <!-- Prism JS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+    <style>
+        /* --- THEME VARIABLES & GENERAL STYLING --- */
+        :root {
+            --bg-color: #f8f9fa; --main-bg-color: #ffffff; --text-color: #212529;
+            --heading-color: #0056b3; --link-color: #007bff; --border-color: #dee2e6;
+            --code-bg: #e9ecef; --code-text: #212529; --toc-bg: #e9f5ff;
+            --toc-border: #007bff; --info-bg: #fff3cd; --info-border: #ffeeba;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05); --pre-bg: #2d2d2d;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --main-bg-color: #1e1e1e; --text-color: #e0e0e0;
+            --heading-color: #61afef; --link-color: #56b6c2; --border-color: #333;
+            --code-bg: #2c2c2c; --code-text: #e0e0e0; --toc-bg: #2a3b4c;
+            --toc-border: #61afef; --info-bg: #3e382b; --info-border: #b08900;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-size: 17px; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border-color); }
+        main { padding: 2rem 0; }
+        .content-card { background-color: var(--main-bg-color); border-radius: 12px; box-shadow: var(--shadow); padding: 2rem 3rem; }
+        h1, h2, h3, h4 { color: var(--heading-color); line-height: 1.3; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-top: 2.5rem; }
+        p, li { font-size: 1.05rem; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: var(--code-bg); color: var(--code-text); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background-color: var(--pre-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; position: relative; font-size: 0.95rem; line-height: 1.5; margin: 1.5rem 0; }
+        pre code { background-color: transparent; padding: 0; color: #ccc; }
+        .token.comment { color: #6a9955 !important; }
+        .copy-button { position: absolute; top: 12px; right: 12px; background-color: #4a505c; color: #e2e2e2; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s, background-color 0.2s; }
+        pre:hover .copy-button { opacity: 1; }
+        .copy-button:hover { background-color: #5c6370; }
+        .toc, .info-box { padding: 1.5rem 2rem; margin: 2rem 0; border-left: 5px solid; border-radius: 8px; }
+        .toc { background-color: var(--toc-bg); border-color: var(--toc-border); }
+        .toc h3 { margin-top: 0; }
+        .toc ul { padding-left: 20px; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .info-box { background-color: var(--info-bg); border-color: var(--info-border); }
+        .info-box p:last-child, .info-box ul:last-child { margin-bottom: 0; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
+        input:checked + .slider { background-color: #61afef; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+        /* --- TABLE STYLING --- */
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; font-size: 1rem; }
+        th, td { padding: 12px 15px; border: 1px solid var(--border-color); text-align: left; }
+        th { background-color: var(--toc-bg); }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <h4>Object Storage Guide</h4>
+        <div class="theme-switch-wrapper">
+            <span>☀️</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider round"></div>
+            </label>
+            <span>🌙</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="content-card">
+                <header style="text-align:center; margin-bottom: 3rem;">
+                    <h1>Setting Up MinIO: Your Own File Storage</h1>
+                    <p>Store and stream PDFs, videos and images for your Flask apps — without the nginx upload limit</p>
+                </header>
+
+                <nav class="toc">
+                    <h3>Table of Contents</h3>
+                    <ul>
+                        <li><a href="#section-1">Why MinIO Instead of Uploading Straight to the Server?</a></li>
+                        <li><a href="#section-2">Part 1: Installation with Docker</a></li>
+                        <li><a href="#section-3">Part 2: Securing It with Nginx Proxy Manager</a></li>
+                        <li><a href="#section-4">Part 3: Creating a Bucket for Your App</a></li>
+                        <li><a href="#section-5">Part 4: Creating Access Keys for Your App</a></li>
+                        <li><a href="#section-6">Part 5: Connecting Your Flask App</a></li>
+                        <li><a href="#section-7">Part 6: Rotating Keys (When a Secret Leaks)</a></li>
+                        <li><a href="#section-8">Part 7: Adding a Second or Third App</a></li>
+                        <li><a href="#section-9">Part 8: Where Files Live &amp; How to Back Them Up</a></li>
+                        <li><a href="#section-10">Part 9: Troubleshooting</a></li>
+                        <li><a href="#section-11">Part 10: Decommissioning MinIO</a></li>
+                    </ul>
+                </nav>
+
+                <section id="section-1">
+                    <h2>Why MinIO Instead of Uploading Straight to the Server?</h2>
+                    <p>When a Flask app saves uploads to its own disk, every single byte has to travel <em>through</em> Flask. A teacher uploading a 300 MB lecture video ties up a worker for minutes, and nginx blocks it anyway because of <code>client_max_body_size</code>. Videos then play badly, because Flask is not built to stream large files.</p>
+                    <p><strong>MinIO</strong> is your own private file storage server (an "S3-compatible object store"). It runs as one more Docker container on your VPS and changes the picture completely:</p>
+                    <ul>
+                        <li><strong>Files never pass through Flask.</strong> The browser uploads <em>directly</em> to MinIO using a temporary signed link that Flask generates. Flask only records the file name in MySQL.</li>
+                        <li><strong>No upload size limit.</strong> We set <code>client_max_body_size 0;</code> on MinIO's own proxy host only — your app keeps its safe, small limit.</li>
+                        <li><strong>Videos stream properly.</strong> MinIO supports range requests, so viewers can skip and seek instantly instead of downloading the whole file first.</li>
+                        <li><strong>Files stay private.</strong> Buckets are private by default. Your app hands out links that expire, so only signed-in users can view.</li>
+                        <li><strong>One install serves every project.</strong> Each app gets its own bucket and its own keys.</li>
+                    </ul>
+                    <div class="info-box">
+                        <p><strong>Vocabulary in one line:</strong> a <strong>bucket</strong> is like a top-level folder for one app; an <strong>object</strong> is a file inside it; an <strong>access key + secret key</strong> is the username and password your app uses to talk to MinIO.</p>
+                    </div>
+                </section>
+
+                <section id="section-2">
+                    <h2>Part 1: Installation with Docker</h2>
+
+                    <h3>Step 1: Check Your Free Ports</h3>
+                    <p>MinIO wants ports 9000 and 9001, but <strong>9000 is already used by the Portainer Agent</strong> on this server. Check the <a href="port-registry.html">Server Port Registry</a> and pick free ones. This guide uses <strong>9002</strong> and <strong>9003</strong>.</p>
+
+                    <h3>Step 2: Create the Project Directory</h3>
+                    <pre><code class="language-bash">mkdir -p /root/docker-deployment/minio
+cd /root/docker-deployment/minio
+</code></pre>
+
+                    <h3>Step 3: Create the `docker-compose.yml` File</h3>
+                    <pre><code class="language-bash">nano /root/docker-deployment/minio/docker-compose.yml
+</code></pre>
+                    <p>Paste the following. Change the password to something strong and unique — this is the master login for all your files.</p>
+                    <pre><code class="language-yaml">services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: someless
+      MINIO_ROOT_PASSWORD: your-strong-password-here
+    ports:
+      - "9002:9000"   # S3 API — apps and browsers talk to this
+      - "9003:9001"   # Web console — the admin GUI
+    volumes:
+      - ./data:/data
+    networks:
+      - nginx-proxy
+
+networks:
+  nginx-proxy:
+    external: true
+</code></pre>
+
+                    <h3>Step 4: Start It</h3>
+                    <pre><code class="language-bash">docker compose up -d
+</code></pre>
+                    <p>Open <code>http://YOUR_SERVER_IP:9003</code> in a browser. You should see the MinIO login page. Sign in with the root user and password you just set.</p>
+
+                    <div class="info-box">
+                        <p><strong>Why <code>nginx-proxy</code> network?</strong> It puts MinIO on the same Docker network as Nginx Proxy Manager, so NPM can reach it by container name (<code>minio</code>) in the next part — no IP addresses needed.</p>
+                    </div>
+                </section>
+
+                <section id="section-3">
+                    <h2>Part 2: Securing It with Nginx Proxy Manager</h2>
+                    <p>MinIO is really <strong>two services in one container</strong>, so it needs <strong>two subdomains</strong>: one for the API (what apps use) and one for the console (what you use). This guide uses:</p>
+                    <table>
+                        <tr><th>Domain</th><th>Points to</th><th>Used by</th></tr>
+                        <tr><td><code>miniofiles.someless.top</code></td><td>port <strong>9000</strong> (S3 API)</td><td>Your Flask apps, students' browsers</td></tr>
+                        <tr><td><code>minio.someless.top</code></td><td>port <strong>9001</strong> (console)</td><td>Only you, for administration</td></tr>
+                    </table>
+
+                    <h3>Step 1: Create the DNS Records</h3>
+                    <p>At your DNS provider, add two <strong>A records</strong> pointing to your server's IP address:</p>
+                    <ul>
+                        <li><code>miniofiles</code> &rarr; <code>YOUR_SERVER_IP</code></li>
+                        <li><code>minio</code> &rarr; <code>YOUR_SERVER_IP</code></li>
+                    </ul>
+                    <p>Wait two or three minutes before continuing — Let's Encrypt must be able to find these domains, or the certificate request fails with "Internal Error".</p>
+
+                    <h3>Step 2: Proxy Host for the Console</h3>
+                    <p>In Nginx Proxy Manager, click <strong>Add Proxy Host</strong>:</p>
+                    <table>
+                        <tr><th>Field</th><th>Value</th></tr>
+                        <tr><td>Domain Names</td><td><code>minio.someless.top</code></td></tr>
+                        <tr><td>Scheme</td><td><code>http</code></td></tr>
+                        <tr><td>Forward Hostname / IP</td><td><code>minio</code></td></tr>
+                        <tr><td>Forward Port</td><td><code>9001</code></td></tr>
+                        <tr><td>Websockets Support</td><td><strong>ON</strong> (the console needs it)</td></tr>
+                        <tr><td>SSL tab</td><td>Request a new SSL Certificate, Force SSL <strong>ON</strong>, HTTP/2 <strong>ON</strong></td></tr>
+                    </table>
+
+                    <h3>Step 3: Proxy Host for the API</h3>
+                    <p>Add a second proxy host:</p>
+                    <table>
+                        <tr><th>Field</th><th>Value</th></tr>
+                        <tr><td>Domain Names</td><td><code>miniofiles.someless.top</code></td></tr>
+                        <tr><td>Scheme</td><td><code>http</code></td></tr>
+                        <tr><td>Forward Hostname / IP</td><td><code>minio</code></td></tr>
+                        <tr><td>Forward Port</td><td><code>9000</code></td></tr>
+                        <tr><td>Websockets Support</td><td>OFF</td></tr>
+                        <tr><td>SSL tab</td><td>Request a new SSL Certificate, Force SSL <strong>ON</strong>, HTTP/2 <strong>ON</strong></td></tr>
+                    </table>
+                    <p>Then open the <strong>gear icon (Advanced)</strong> tab and paste this. <strong>This is the part that removes the upload size limit:</strong></p>
+                    <pre><code class="language-nginx">client_max_body_size 0;
+proxy_request_buffering off;
+proxy_read_timeout 3600s;
+proxy_send_timeout 3600s;
+</code></pre>
+                    <p><code>client_max_body_size 0</code> means unlimited, and <code>proxy_request_buffering off</code> makes nginx stream the upload straight through instead of saving it to disk first.</p>
+
+                    <h3>Step 4: Tell MinIO Its Public Addresses</h3>
+                    <p>MinIO must know its own public URLs, or the console will misbehave and the temporary file links it generates will contain an internal address that nobody can reach.</p>
+                    <pre><code class="language-bash">nano /root/docker-deployment/minio/docker-compose.yml
+</code></pre>
+                    <p>Add the two <code>MINIO_..._URL</code> lines to the environment section:</p>
+                    <pre><code class="language-yaml">    environment:
+      MINIO_ROOT_USER: someless
+      MINIO_ROOT_PASSWORD: your-strong-password-here
+      MINIO_SERVER_URL: https://miniofiles.someless.top
+      MINIO_BROWSER_REDIRECT_URL: https://minio.someless.top
+</code></pre>
+                    <p>Apply it:</p>
+                    <pre><code class="language-bash">cd /root/docker-deployment/minio
+docker compose up -d
+</code></pre>
+
+                    <h3>Step 5: Test</h3>
+                    <ul>
+                        <li><code>https://minio.someless.top</code> &rarr; the login page, with a padlock.</li>
+                        <li><code>https://miniofiles.someless.top</code> &rarr; a short <strong>XML "AccessDenied" page</strong>. That is <strong>correct</strong> — it means the API answered and refused anonymous access, exactly as it should.</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <p><strong>Optional — close the raw ports.</strong> Once both domains work, you can delete the whole <code>ports:</code> section from the compose file and run <code>docker compose up -d</code> again. NPM still reaches MinIO over the Docker network, but <code>IP:9002</code> and <code>IP:9003</code> disappear from the public internet. Keep the ports only if you want a backup entrance.</p>
+                    </div>
+                </section>
+
+                <section id="section-4">
+                    <h2>Part 3: Creating a Bucket for Your App</h2>
+                    <p>Each app gets one bucket. Do this in the console at <code>https://minio.someless.top</code>:</p>
+                    <ol>
+                        <li>Click <strong>Create Bucket</strong> in the left menu.</li>
+                        <li>Type a name — lowercase letters, numbers and hyphens only. Example: <code>online-elearning</code>.</li>
+                        <li>Leave Versioning, Object Locking and Quota <strong>off</strong>.</li>
+                        <li>Click <strong>Create Bucket</strong>.</li>
+                    </ol>
+                    <p>The bucket is <strong>private</strong> by default. That is what you want: your app will hand out temporary signed links to the people who are allowed to view each file.</p>
+                    <div class="info-box">
+                        <p><strong>"Invalid bucket name"?</strong> The name must be 3&ndash;63 characters, lowercase, and cannot contain spaces, underscores or capital letters. You will also see this error if a bucket with that name already exists.</p>
+                    </div>
+                </section>
+
+                <section id="section-5">
+                    <h2>Part 4: Creating Access Keys for Your App</h2>
+                    <p>Never let your app log in with the root user. Instead create a <strong>service account</strong> — a key pair that can only touch one bucket. If it ever leaks, the rest of your files are untouched.</p>
+
+                    <div class="info-box">
+                        <p><strong>Note:</strong> the Community Edition console has no "Access Keys" screen, so we use MinIO's built-in <code>mc</code> command-line tool inside the container. Nothing extra to install.</p>
+                    </div>
+
+                    <h3>Step 1: Connect the Admin Tool</h3>
+                    <p>Replace the password with your MinIO root password. Keep the single quotes — they protect any special characters.</p>
+                    <pre><code class="language-bash">docker exec minio mc alias set local http://localhost:9000 someless 'YOUR_ROOT_PASSWORD'
+</code></pre>
+                    <p>It should answer <code>Added `local` successfully.</code></p>
+
+                    <h3>Step 2: Write the Policy</h3>
+                    <p>This policy is the fence: the key can read, write, delete and list — but <strong>only inside this one bucket</strong>. Change <code>online-elearning</code> to your bucket name in both places.</p>
+                    <pre><code class="language-bash">docker exec -i minio sh -c 'cat > /tmp/elearning-policy.json' &lt;&lt;'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::online-elearning",
+        "arn:aws:s3:::online-elearning/*"
+      ]
+    }
+  ]
+}
+EOF
+</code></pre>
+                    <p>Two lines are needed in <code>Resource</code>: the first is the bucket itself (for listing), the second with <code>/*</code> is every file inside it.</p>
+
+                    <h3>Step 3: Create the Keys</h3>
+                    <pre><code class="language-bash">docker exec minio mc admin user svcacct add --policy /tmp/elearning-policy.json local someless
+</code></pre>
+                    <p>It prints something like:</p>
+                    <pre><code class="language-text">Access Key: Z20JC4C9LNTS3SL2ND3E
+Secret Key: 8FG5PwCwgNoHvYrjAz8LLYVl+7lxJZ5TdEw9+0z0
+Expiration: no-expiry
+</code></pre>
+                    <div class="info-box">
+                        <p><strong>Copy both immediately.</strong> The secret key is shown only once and can never be displayed again. If you lose it, you simply delete that key and create a new one (see Part 6). Treat it like a password: never in screenshots, never in a public git repository.</p>
+                    </div>
+
+                    <h3>Useful: List the Keys You Have Created</h3>
+                    <pre><code class="language-bash">docker exec minio mc admin user svcacct ls local someless
+</code></pre>
+                </section>
+
+                <section id="section-6">
+                    <h2>Part 5: Connecting Your Flask App</h2>
+
+                    <h3>Step 1: Install the Library</h3>
+                    <p>Add to <code>requirements.txt</code>:</p>
+                    <pre><code class="language-text">minio==7.2.15
+</code></pre>
+
+                    <h3>Step 2: Put the Settings in `.env`</h3>
+                    <p>Never hard-code keys in your Python files. Put them in <code>.env</code>, which is already excluded from git and from the Docker image.</p>
+                    <pre><code class="language-bash"># MinIO object storage
+MINIO_ENDPOINT=miniofiles.someless.top
+MINIO_SECURE=true
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+MINIO_BUCKET=online-elearning
+</code></pre>
+                    <p><strong>Note:</strong> the endpoint is the domain <em>only</em> — no <code>https://</code> and no trailing slash. <code>MINIO_SECURE=true</code> is what tells the client to use HTTPS.</p>
+
+                    <h3>Step 3: Create the Client</h3>
+                    <pre><code class="language-python">import os
+from minio import Minio
+
+client = Minio(
+    os.getenv('MINIO_ENDPOINT'),
+    access_key=os.getenv('MINIO_ACCESS_KEY'),
+    secret_key=os.getenv('MINIO_SECRET_KEY'),
+    secure=os.getenv('MINIO_SECURE') == 'true',
+    # Required: a bucket-scoped key is not allowed to ask MinIO for the
+    # bucket's region, so we state it and skip that lookup entirely.
+    region='us-east-1',
+)
+</code></pre>
+                    <div class="info-box">
+                        <p><strong>If you forget <code>region</code>,</strong> every upload fails with <code>S3Error: AccessDenied</code> even though the keys are correct. The client tries a "get bucket location" call first, which your tight policy rightly refuses. Setting the region skips that call.</p>
+                    </div>
+
+                    <h3>Step 4: The Four Things You Will Actually Do</h3>
+                    <pre><code class="language-python"># 1. Upload a file from disk (server side)
+client.fput_object('online-elearning', 'ilonga/materials/notes.pdf',
+                   '/path/to/notes.pdf', content_type='application/pdf')
+
+# 2. Give the browser a link to upload DIRECTLY to MinIO (never through Flask)
+from datetime import timedelta
+upload_url = client.presigned_put_object(
+    'online-elearning', 'ilonga/materials/video.mp4', expires=timedelta(hours=1))
+
+# 3. Give a signed-in student a link to WATCH or READ the file (expires)
+view_url = client.presigned_get_object(
+    'online-elearning', 'ilonga/materials/video.mp4', expires=timedelta(hours=2))
+
+# 3b. Same file, but forced as a DOWNLOAD with a friendly filename
+download_url = client.presigned_get_object(
+    'online-elearning', 'ilonga/materials/notes.pdf', expires=timedelta(hours=2),
+    response_headers={'response-content-disposition':
+                      'attachment; filename="Week 1 Notes.pdf"'})
+
+# 4. Delete a file
+client.remove_object('online-elearning', 'ilonga/materials/notes.pdf')
+</code></pre>
+                    <p>The difference between "watch online" and "download" is only the <code>response-content-disposition</code> header: <code>inline</code> (the default) plays or displays the file, <code>attachment</code> saves it.</p>
+
+                    <h3>Step 5: Docker Compose — Pass the Settings In</h3>
+                    <p>If your app runs in Docker, it reads <code>.env</code> through <code>env_file</code>. Make sure the <code>.env</code> on the server has the MinIO lines too — the one on your PC is not the one the container reads.</p>
+
+                    <h3>Step 6: Quick Test From Your PC</h3>
+                    <p>A one-file test to prove the whole chain works before building any feature:</p>
+                    <pre><code class="language-python">import os
+from dotenv import load_dotenv
+from minio import Minio
+
+load_dotenv()
+client = Minio(os.getenv('MINIO_ENDPOINT'),
+               access_key=os.getenv('MINIO_ACCESS_KEY'),
+               secret_key=os.getenv('MINIO_SECRET_KEY'),
+               secure=True, region='us-east-1')
+
+bucket = os.getenv('MINIO_BUCKET')
+client.fput_object(bucket, 'test/hello.png', r'C:\Users\you\Downloads\hello.png')
+
+for obj in client.list_objects(bucket, recursive=True):
+    print(obj.object_name, obj.size, 'bytes')
+</code></pre>
+                    <p>Then refresh the bucket in the console — the file appears there.</p>
+                </section>
+
+                <section id="section-7">
+                    <h2>Part 6: Rotating Keys (When a Secret Leaks)</h2>
+                    <p>If a secret key is ever exposed — pasted into a chat, committed to git, printed in a screenshot — do not panic. Rotating takes about ten seconds and nothing is lost: <strong>the files are untouched, only the login changes.</strong></p>
+
+                    <h3>Step 1: See What Keys Exist</h3>
+                    <pre><code class="language-bash">docker exec minio mc admin user svcacct ls local someless
+</code></pre>
+
+                    <h3>Step 2: Create the Replacement First</h3>
+                    <p>Create the new key <em>before</em> deleting the old one, so your app is never without a working login.</p>
+                    <pre><code class="language-bash">docker exec minio mc admin user svcacct add --policy /tmp/elearning-policy.json local someless
+</code></pre>
+                    <p>Copy the new Access Key and Secret Key.</p>
+
+                    <div class="info-box">
+                        <p><strong>Lost <code>/tmp/elearning-policy.json</code>?</strong> The <code>/tmp</code> folder is wiped whenever the container restarts. Just re-run the policy command from Part 4, Step 2 before creating the key.</p>
+                    </div>
+
+                    <h3>Step 3: Update the App</h3>
+                    <pre><code class="language-bash">nano /root/docker-deployment/apps/YOUR_APP/.env     # paste the new keys
+cd /root/docker-deployment/apps/YOUR_APP
+docker compose up -d                                # restart so it reads them
+</code></pre>
+                    <p>Test that uploads still work.</p>
+
+                    <h3>Step 4: Delete the Old Key</h3>
+                    <pre><code class="language-bash">docker exec minio mc admin user svcacct rm local OLD_ACCESS_KEY
+</code></pre>
+                    <p>The leaked key is now dead and useless to anyone who saw it.</p>
+
+                    <h3>Changing the Root Password</h3>
+                    <p>The root password is separate. To change it, edit <code>MINIO_ROOT_PASSWORD</code> in the compose file and run <code>docker compose up -d</code>. Service account keys keep working — they are independent of the root password.</p>
+                </section>
+
+                <section id="section-8">
+                    <h2>Part 7: Adding a Second or Third App</h2>
+                    <p>You never install MinIO again. One MinIO serves every project on the server — each app just gets its own bucket and its own keys, and cannot see the others.</p>
+                    <ol>
+                        <li><strong>Create a bucket</strong> in the console, e.g. <code>bbr-files</code>.</li>
+                        <li><strong>Write a policy</strong> for it (same as Part 4 Step 2, with the new bucket name and a new file name):
+                            <pre><code class="language-bash">docker exec -i minio sh -c 'cat > /tmp/bbr-policy.json' &lt;&lt;'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::bbr-files",
+        "arn:aws:s3:::bbr-files/*"
+      ]
+    }
+  ]
+}
+EOF
+</code></pre>
+                        </li>
+                        <li><strong>Create its keys</strong>:
+                            <pre><code class="language-bash">docker exec minio mc admin user svcacct add --policy /tmp/bbr-policy.json local someless
+</code></pre>
+                        </li>
+                        <li><strong>Put those keys in that app's <code>.env</code></strong> with <code>MINIO_BUCKET=bbr-files</code>.</li>
+                    </ol>
+                    <p>Done. If app #2's key leaks, app #1's files are still completely safe.</p>
+                </section>
+
+                <section id="section-9">
+                    <h2>Part 8: Where Files Live &amp; How to Back Them Up</h2>
+                    <p>Everything is stored in the folder you mapped in the compose file:</p>
+                    <pre><code class="language-text">/root/docker-deployment/minio/data/
+└── online-elearning/          ← the bucket
+    └── test/
+        └── app.png/           ← each object is a FOLDER
+            └── xl.meta        ← the real data + metadata
+</code></pre>
+                    <div class="info-box">
+                        <p><strong>Look, but never touch.</strong> Objects are not stored as plain files — <code>xl.meta</code> is MinIO's internal format. Browsing with WinSCP is harmless, but never add, rename or delete anything inside this folder by hand: it corrupts the bucket's bookkeeping. Always go through the console, <code>mc</code>, or your app.</p>
+                    </div>
+
+                    <h3>Backup — The Clean Way (No Downtime)</h3>
+                    <pre><code class="language-bash"># Mirror the bucket into a normal folder you can copy anywhere
+docker exec minio mc mirror local/online-elearning /data/backup-elearning
+</code></pre>
+
+                    <h3>Backup — The Simple Way (Stop, Copy, Start)</h3>
+                    <pre><code class="language-bash">cd /root/docker-deployment/minio
+docker compose stop
+tar czf minio-backup-$(date +%F).tar.gz data/
+docker compose start
+</code></pre>
+                    <p>Add whichever you prefer to the same routine you use for your MySQL backups. MySQL holds the records; this folder holds the actual files — you need both.</p>
+                </section>
+
+                <section id="section-10">
+                    <h2>Part 9: Troubleshooting</h2>
+                    <table>
+                        <tr><th>Problem</th><th>Cause &amp; Fix</th></tr>
+                        <tr>
+                            <td><code>S3Error: AccessDenied</code> when uploading, though the keys are right</td>
+                            <td>The client asked for the bucket region and your scoped policy refused. Add <code>region='us-east-1'</code> to the <code>Minio(...)</code> client.</td>
+                        </tr>
+                        <tr>
+                            <td>NPM says "Internal Error" when requesting the certificate</td>
+                            <td>The DNS A record does not exist yet or has not propagated. Add it, wait 2&ndash;3 minutes, save again.</td>
+                        </tr>
+                        <tr>
+                            <td>Console loads but keeps logging you out / behaves strangely</td>
+                            <td><strong>Websockets Support</strong> is off on the console's proxy host. Turn it on.</td>
+                        </tr>
+                        <tr>
+                            <td><code>413 Request Entity Too Large</code> on upload</td>
+                            <td>The Advanced config is missing on the API proxy host. Add <code>client_max_body_size 0;</code> (Part 2, Step 3).</td>
+                        </tr>
+                        <tr>
+                            <td>File links point to <code>localhost</code> or an internal address</td>
+                            <td><code>MINIO_SERVER_URL</code> is not set. Add it to the compose environment (Part 2, Step 4).</td>
+                        </tr>
+                        <tr>
+                            <td>"Invalid bucket name"</td>
+                            <td>Use lowercase letters, numbers and hyphens only — or the bucket already exists.</td>
+                        </tr>
+                        <tr>
+                            <td><code>mc: command not found</code></td>
+                            <td>Run it <em>inside</em> the container: every command starts with <code>docker exec minio mc ...</code></td>
+                        </tr>
+                        <tr>
+                            <td>Uploads cut off after ~60 seconds</td>
+                            <td>Proxy timeouts. Confirm <code>proxy_read_timeout 3600s;</code> and <code>proxy_send_timeout 3600s;</code> in the Advanced tab.</td>
+                        </tr>
+                    </table>
+
+                    <h3>Useful Commands</h3>
+                    <pre><code class="language-bash"># Is it running?
+docker ps | grep minio
+
+# What went wrong?
+docker logs minio --tail 50
+
+# List everything in a bucket
+docker exec minio mc ls --recursive local/online-elearning
+
+# How much space is used?
+docker exec minio mc du local/online-elearning
+
+# Delete one file
+docker exec minio mc rm local/online-elearning/test/app.png
+</code></pre>
+                </section>
+
+                <section id="section-11">
+                    <h2>Part 10: Decommissioning MinIO</h2>
+                    <p>If you ever need to remove MinIO completely:</p>
+                    <ol>
+                        <li>
+                            <strong>Back up the files first</strong> — this is the only copy.
+                            <pre><code class="language-bash">cd /root/docker-deployment/minio
+tar czf ~/minio-final-backup.tar.gz data/
+</code></pre>
+                        </li>
+                        <li>
+                            <strong>Stop and remove the container:</strong>
+                            <pre><code class="language-bash">cd /root/docker-deployment/minio
+docker compose down
+</code></pre>
+                        </li>
+                        <li>
+                            <strong>Delete the project folder</strong> — this destroys every stored file permanently.
+                            <pre><code class="language-bash">cd ..
+rm -rf minio
+</code></pre>
+                        </li>
+                        <li><strong>Delete the two proxy hosts</strong> in Nginx Proxy Manager, and the two DNS records.</li>
+                    </ol>
+                    <p>MinIO has been completely removed from your server.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts at the end of the body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- COPY BUTTON LOGIC ---
+            document.querySelectorAll('pre').forEach(pre => { const code = pre.querySelector('code'); if (code) { const button = document.createElement('button'); button.innerText = 'Copy'; button.className = 'copy-button'; pre.appendChild(button); button.addEventListener('click', () => { navigator.clipboard.writeText(code.innerText).then(() => { button.innerText = 'Copied!'; setTimeout(() => { button.innerText = 'Copy'; }, 2000); }); }); } });
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggle = document.getElementById('checkbox'); const currentTheme = localStorage.getItem('theme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; const applyTheme = (theme) => { document.documentElement.setAttribute('data-theme', theme); themeToggle.checked = theme === 'dark'; }; if (currentTheme) { applyTheme(currentTheme); } else if (prefersDark) { applyTheme('dark'); } themeToggle.addEventListener('change', function() { const theme = this.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); });
+        });
+    </script>
+</body>
+</html>
