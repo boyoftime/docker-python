@@ -221,6 +221,9 @@ ssh root@YOUR_SERVER_IP
 # Update package list and install Docker
 apt-get update
 apt-get install -y docker.io docker-compose-v2
+
+# Install buildx (prevents the "configured to build using Bake, but buildx isn't installed" warning)
+apt-get install -y docker-buildx
 </code></pre>
                     <div class="info-box">
                         <p><strong>Important Firewall Configuration:</strong> Before proceeding, log in to your VPS provider's dashboard and configure its firewall. You must **ALLOW inbound TCP traffic** on these ports:
